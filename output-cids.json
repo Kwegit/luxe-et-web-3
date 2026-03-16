@@ -1,0 +1,10 @@
+{
+  "tokenURI": "ipfs://QmfDXT7G5vPihiijqcbT4rjPu8p5gszj2fszMgxBZc4YWB",
+  "metadataCID": "QmfDXT7G5vPihiijqcbT4rjPu8p5gszj2fszMgxBZc4YWB",
+  "assets": {
+    "photoPrincipale": "ipfs://QmZ38gFDkvCenKGKB9vFeJrLjC8hphao1PjWBbYDGhcSLU",
+    "photoInterieur": "ipfs://QmNjBGp4zAgzdw5nmji9ysqtLEeSsuDfphW3vYe8tGeNEF",
+    "photoQuincaillerie": "ipfs://QmVfTzVGG9NUqbS8SCU7kmjE6dJ9jzNoTjeHczCj2DfZBF",
+    "certificatPDF": "ipfs://QmPGp2Lk4FdCztZ4shVh8Woczq27iMSGWpwP4H4DBzHXL1"
+  }
+}
