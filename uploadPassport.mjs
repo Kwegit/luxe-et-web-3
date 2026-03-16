@@ -84,11 +84,11 @@ async function main() {
   console.log("\n📝  Étape 2 — Construction du JSON");
 
   const metadata = {
-    name: "Maison Aurel — Sac N°001",
+    name: "Maison William — Sac N°001",
     description:
-      "Passeport numérique officiel. Sac à main cousu main en cuir d'alligator noir, quincaillerie or jaune 18k. Pièce unique certifiée par Maison Aurel.",
+      "Passeport numérique officiel. Sac à main cousu main en cuir d'alligator noir, quincaillerie or jaune 18k. Pièce unique certifiée par Maison William.",
     image: `ipfs://${photoPrincipaleCID}`,
-    external_url: "https://passport.maison-aurel.com/001",
+    external_url: "https://passport.maison-william.com/001",
 
     attributes: [
       { trait_type: "Type de cuir",        value: "Alligator mississippiensis" },
