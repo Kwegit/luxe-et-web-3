@@ -19,6 +19,8 @@ contract NFCBrandRegistry is ERC721, Ownable {
     // Historique complet des ventes pour chaque puce NFC
     mapping(uint256 => SaleInfo[]) private tokenSalesHistory;
 
+    // tokenURI par tokenId
+    mapping(uint256 => string) private _tokenURIs;
     // Événement pour tracer facilement les transactions sur la blockchain
     event ItemSold(uint256 indexed tokenId, address toWallet, string buyerName, uint256 price, bool isResale);
 
@@ -35,7 +37,8 @@ contract NFCBrandRegistry is ERC721, Ownable {
         uint256 nfcTokenId, 
         string memory _buyerName, 
         string memory _objectName, 
-        uint256 _salePrice
+        uint256 _salePrice,
+        string memory _tokenURI
     ) public onlyOwner {
         // Vérifie que le token n'a pas déjà été créé
         require(_ownerOf(nfcTokenId) == address(0), "Ce NFC a deja ete enregistre");
@@ -46,6 +49,8 @@ contract NFCBrandRegistry is ERC721, Ownable {
         // Enregistre le nom de l'objet de manière permanente
         objectNames[nfcTokenId] = _objectName;
 
+        // Enregistre le tokenURI
+        _tokenURIs[nfcTokenId] = _tokenURI;
         // Ajoute la première vente à l'historique
         tokenSalesHistory[nfcTokenId].push(SaleInfo({
             buyerName: _buyerName,
@@ -101,5 +106,13 @@ contract NFCBrandRegistry is ERC721, Ownable {
         SaleInfo memory currentInfo = tokenSalesHistory[nfcTokenId][historyLength - 1];
         
         return (currentInfo.buyerName, currentInfo.salePrice, currentInfo.date);
+    }
+
+    /**
+     * @dev Retourne le tokenURI stocké pour un tokenId donné.
+     */
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        require(_ownerOf(tokenId) != address(0), "Objet inexistant");
+        return _tokenURIs[tokenId];
     }
 }

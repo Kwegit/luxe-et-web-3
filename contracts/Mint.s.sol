@@ -8,7 +8,7 @@ contract MintScript is Script {
     function run() external {
         vm.startBroadcast();
         NFCBrandRegistry nft = NFCBrandRegistry(
-            0x73511669fd4dE447feD18BB79bAFeAC93aB7F31f  // Adresse du contrat déployé en local
+            0xC469e7aE4aD962c30c7111dc580B4adbc7E914DD  // Adresse du contrat déployé en local
         );
         // Note: Le contrat utilise registerInitialPurchase au lieu de safeMint
         // Adaptez selon vos besoins : exemple de premier achat
@@ -17,7 +17,8 @@ contract MintScript is Script {
             1,                                            // nfcTokenId
             "Buyer Name",                                 // buyerName
             "Object Name",                                // objectName
-            1000000000000000000                          // salePrice (en wei)
+            1000000000000000000,                         // salePrice (en wei)
+            "ipfs://QmfDXT7G5vPihiijqcbT4rjPu8p5gszj2fszMgxBZc4YWB" // tokenURI
         );
         vm.stopBroadcast();
     }
