@@ -1,0 +1,18 @@
+version: '3.9'
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["bun", "--cwd", "/app/apps/web", "run", "dev", "--host", "0.0.0.0", "--port", "3000"]
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    working_dir: /app
+    volumes:
+      - .:/app
+      - bun-cache:/root/.bun
+
+volumes:
+  bun-cache:
