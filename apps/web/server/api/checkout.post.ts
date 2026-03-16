@@ -1,6 +1,5 @@
-import { OrderStatus } from "@prisma/client";
 import Stripe from "stripe";
-import { prisma } from "../utils/prisma";
+import { createOrder, findBag, findUser } from "../utils/data-store";
 
 export default defineEventHandler(async (event) => {
 	const config = useRuntimeConfig();
@@ -20,12 +19,12 @@ export default defineEventHandler(async (event) => {
 		});
 	}
 
-	const user = await prisma.user.findUnique({ where: { id: userId } });
+	const user = findUser(userId);
 	if (!user) {
 		throw createError({ statusCode: 404, statusMessage: "User not found" });
 	}
 
-	const bag = await prisma.bag.findUnique({ where: { id: bagId } });
+	const bag = findBag(bagId);
 	if (!bag) {
 		throw createError({ statusCode: 404, statusMessage: "Bag not found" });
 	}
@@ -57,13 +56,10 @@ export default defineEventHandler(async (event) => {
 		},
 	});
 
-	await prisma.order.create({
-		data: {
-			bagId: bag.id,
-			userId: user.id,
-			status: OrderStatus.PAYMENT_CREATED,
-			stripeSessionId: session.id,
-		},
+	createOrder({
+		bagId: bag.id,
+		userId: user.id,
+		stripeSessionId: session.id,
 	});
 
 	return { id: session.id, url: session.url };
