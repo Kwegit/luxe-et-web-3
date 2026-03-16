@@ -3,15 +3,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: ["bun", "--cwd", "/app/apps/web", "run", "dev", "--host", "0.0.0.0", "--port", "3000"]
+    working_dir: /app/apps/web
+    command: ["/bin/sh", "-c", "bun install --backend=copy && bun run dev -- --host 0.0.0.0 --port 3000"]
     ports:
       - "3000:3000"
     env_file:
       - .env
-    working_dir: /app
     volumes:
       - .:/app
       - bun-cache:/root/.bun
+      - web-node-modules:/app/apps/web/node_modules
 
 volumes:
   bun-cache:
+  web-node-modules:
