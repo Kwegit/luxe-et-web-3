@@ -1,0 +1,137 @@
+{
+    "$schema": "https://biomejs.dev/schemas/2.4.6/schema.json",
+    "assist": {
+        "actions": {
+            "source": {
+                "organizeImports": "on",
+                "useSortedKeys": "on"
+            }
+        },
+        "enabled": true
+    },
+    "css": {
+        "parser": {
+            "tailwindDirectives": true
+        }
+    },
+    "files": {
+        "includes": ["**", "!**/components/ui"]
+    },
+    "formatter": {
+        "attributePosition": "auto",
+        "bracketSpacing": true,
+        "enabled": true,
+        "formatWithErrors": false,
+        "indentStyle": "space",
+        "indentWidth": 4,
+        "lineEnding": "lf"
+    },
+    "javascript": {
+        "formatter": {
+            "bracketSameLine": false,
+            "bracketSpacing": true,
+            "quoteStyle": "double",
+            "semicolons": "asNeeded",
+            "trailingCommas": "all"
+        }
+    },
+    "linter": {
+        "domains": {
+            "vue": "recommended"
+        },
+        "enabled": true,
+        "rules": {
+            "complexity": {
+                "noExcessiveLinesPerFunction": {
+                    "level": "error"
+                }
+            },
+            "correctness": {
+                "noUnusedImports": "warn",
+                "noUnusedVariables": "warn",
+                "recommended": true
+            },
+            "nursery": {
+                "noNestedPromises": "warn",
+                "noUselessReturn": "error",
+                "useErrorCause": "warn",
+                "useGlobalThis": "error",
+                "useSortedClasses": {
+                    "fix": "safe",
+                    "level": "warn",
+                    "options": {
+                        "attributes": ["classList", "className", "class"],
+                        "functions": ["clsx", "cva", "tw", "tw.*"]
+                    }
+                }
+            },
+            "recommended": true,
+            "security": {
+                "noSecrets": {
+                    "level": "error",
+                    "options": {
+                        "entropyThreshold": 65
+                    }
+                }
+            },
+            "style": {
+                "noNestedTernary": "info",
+                "noUselessElse": "warn",
+                "noYodaExpression": "info",
+                "recommended": true,
+                "useCollapsedElseIf": "info",
+                "useCollapsedIf": "info",
+                "useForOf": "info",
+                "useNamingConvention": "info"
+            }
+        }
+    },
+    "overrides": [
+        {
+            "includes": ["**/*.svelte", "**/*.astro", "**/*.vue"],
+            "linter": {
+                "rules": {
+                    "correctness": {
+                        "noUnusedImports": "off",
+                        "noUnusedVariables": "off"
+                    },
+                    "style": {
+                        "useConst": "off",
+                        "useImportType": "off"
+                    }
+                }
+            }
+        },
+        {
+            "includes": ["tests/**", "**/*.test.ts", "**/*.spec.ts"],
+            "linter": {
+                "rules": {
+                    "complexity": {
+                        "noExcessiveLinesPerFunction": "off"
+                    },
+                    "security": {
+                        "noSecrets": "off"
+                    },
+                    "suspicious": {
+                        "noExplicitAny": "off"
+                    }
+                }
+            }
+        },
+        {
+            "includes": ["shared/types/**"],
+            "linter": {
+                "rules": {
+                    "style": {
+                        "useNamingConvention": "off"
+                    }
+                }
+            }
+        }
+    ],
+    "vcs": {
+        "clientKind": "git",
+        "enabled": true,
+        "useIgnoreFile": true
+    }
+}
