@@ -58,7 +58,7 @@ const filtered = computed(() => {
         <div class="flex items-start justify-between">
           <div>
             <NuxtLink :to="`/bags/${bag.id}`" class="text-lg font-semibold">{{ bag.name }}</NuxtLink>
-            <p class="text-xs uppercase tracking-[0.2em] text-black/50">Certificat : {{ bag.uid }}</p>
+            <!-- <p class="text-xs uppercase tracking-[0.2em] text-black/50">Certificat : {{ bag.uid }}</p> -->
           </div>
           <span class="text-lg font-semibold">€{{ (bag.priceCents / 100).toFixed(0) }}</span>
         </div>
