@@ -47,6 +47,33 @@ export default defineNuxtPlugin(() => {
         storage: new LocalStorage(),
     })
 
+    // Mount hidden iframe so the embedded wallet proxy can communicate with Privy's servers.
+    // The JS SDK Core doesn't do this automatically (unlike the React SDK).
+    const iframe = document.createElement("iframe")
+    iframe.src = client.embeddedWallet.getURL()
+    iframe.style.cssText = "display:none;position:absolute;width:0;height:0;border:0;"
+    document.body.appendChild(iframe)
+
+    const handleWalletMessage = (event: MessageEvent) => {
+        try {
+            const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data
+            if (data?.event?.startsWith?.("privy:")) {
+                client.embeddedWallet.onMessage(data)
+            }
+        } catch { /* non-privy messages are ignored */ }
+    }
+    window.addEventListener("message", handleWalletMessage)
+
+    iframe.addEventListener("load", () => {
+        if (iframe.contentWindow) {
+            client.embeddedWallet.setMessagePoster({
+                postMessage: (msg, origin, transfer) =>
+                    iframe.contentWindow!.postMessage(msg, origin, transfer as Transferable[] | undefined),
+                reload: () => { iframe.src = client.embeddedWallet.getURL() },
+            })
+        }
+    })
+
     client
         .initialize()
         .then(async () => {
@@ -54,6 +81,13 @@ export default defineNuxtPlugin(() => {
             try {
                 const current = await client.user.get()
                 privyUser.value = current?.user ?? null
+                if (privyUser.value) {
+                    // biome-ignore lint/suspicious/noExplicitAny: Privy linked_accounts shape varies by SDK version
+                    const wallet = (privyUser.value as any).linked_accounts?.find(
+                        (a: any) => a.type === "wallet" && a.wallet_client_type === "privy" && a.connector_type === "embedded"
+                    )
+                    console.info("[privy] user session restored — wallet:", wallet?.address ?? "none")
+                }
             } catch (err: unknown) {
                 console.warn("[privy-plugin] unable to fetch user", err)
             }
