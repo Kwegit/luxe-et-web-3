@@ -1,18 +1,54 @@
 services:
+  hardhat:
+    image: node:22
+    working_dir: /app/contracts
+    command:
+      ["/bin/sh", "-c", "npm install && npx hardhat node --hostname 0.0.0.0"]
+    ports:
+      - "8545:8545"
+    volumes:
+      - .:/app
+
   web:
     build:
       context: .
       dockerfile: Dockerfile
     working_dir: /app/apps/web
-    command: ["/bin/sh", "-c", "bun install --backend=copy && bun run dev -- --host 0.0.0.0 --port 3000"]
+    command:
+      [
+        "/bin/sh",
+        "-c",
+        "bun install --backend=copy && bun run dev -- --host 0.0.0.0 --port 3000",
+      ]
+    depends_on:
+      - hardhat
     ports:
       - "3000:3000"
     env_file:
       - .env
+    environment:
+      - SIGNER_RPC_URL=http://hardhat:8545
     volumes:
       - .:/app
       - bun-cache:/root/.bun
       - web-node-modules:/app/apps/web/node_modules
+
+  stripe-listener:
+    image: stripe/stripe-cli:latest
+    profiles:
+      - stripe
+    depends_on:
+      - web
+    env_file:
+      - .env
+    command:
+      [
+        "listen",
+        "--api-key",
+        "${STRIPE_SECRET_KEY}",
+        "--forward-to",
+        "http://web:3000/api/webhooks/stripe",
+      ]
 
 volumes:
   bun-cache:

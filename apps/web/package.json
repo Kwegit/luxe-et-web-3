@@ -4,6 +4,7 @@
     "@pinia/nuxt": "^0.11.3",
     "@stripe/stripe-js": "^8.9.0",
     "@tailwindcss/vite": "^4.2.1",
+    "ethers": "^6.15.0",
     "evlog": "^2.8.0",
     "nuxt": "^4.4.2",
     "nuxt-auth-utils": "^0.5.29",
