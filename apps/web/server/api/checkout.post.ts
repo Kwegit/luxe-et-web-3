@@ -1,5 +1,5 @@
 import Stripe from "stripe"
-import { createOrder, findBag, findUser } from "../utils/data-store"
+import { createOrder, findBag, upsertUserByPrivyId } from "../utils/data-store"
 
 function buildCheckoutSessionPayload(
     bag: NonNullable<ReturnType<typeof findBag>>,
@@ -58,10 +58,7 @@ export default defineEventHandler(async (event) => {
         })
     }
 
-    const user = findUser(userId)
-    if (!user) {
-        throw createError({ statusCode: 404, statusMessage: "User not found" })
-    }
+    const user = upsertUserByPrivyId(userId)
 
     const bag = findBag(bagId)
     if (!bag) {
