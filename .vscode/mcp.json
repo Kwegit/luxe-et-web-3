@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "firefox-devtools": {
+      "command": "npx",
+      "args": ["@padenot/firefox-devtools-mcp"]
+    }
+  }
+}
