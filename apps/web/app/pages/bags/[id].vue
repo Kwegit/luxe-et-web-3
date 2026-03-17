@@ -1,56 +1,88 @@
 <script setup lang="ts">
-import { computed, ref, watchEffect } from "vue";
+import type { User } from "@privy-io/js-sdk-core"
+import { computed, ref, watchEffect } from "vue"
 
-const route = useRoute();
-const bagId = computed(() => String(route.params.id));
+type PrivyUserWithIds = Partial<Pick<User, "id">> & {
+    userId?: string
+    // biome-ignore lint/style/useNamingConvention: external shape from Privy SDK
+    user_id?: string
+}
+
+const nuxtApp = useNuxtApp()
+const router = useRouter()
+const $privyUser = nuxtApp.$privyUser ?? ref<User | null>(null)
+const $privyReady = nuxtApp.$privyReady ?? ref(false)
+const $privyError = nuxtApp.$privyError ?? ref<string | null>(null)
+const isAuthenticated = computed(() => !!$privyUser.value)
+
+const checkoutUserId = computed(() => {
+    const user = $privyUser.value as PrivyUserWithIds | null
+    return user?.id ?? user?.userId ?? user?.user_id ?? "user"
+})
+
+const route = useRoute()
+const bagId = computed(() => String(route.params.id))
 
 const {
-	data: bag,
-	pending,
-	error,
-	refresh,
-} = await useFetch(`/api/bags/${bagId.value}`);
+    data: bag,
+    pending,
+    error,
+    refresh,
+} = await useFetch(`/api/bags/${bagId.value}`)
 
-const checkoutLoading = ref(false);
-const feedback = ref<string | null>(null);
+const checkoutLoading = ref(false)
+const feedback = ref<string | null>(null)
 
 async function startCheckout() {
-	if (!bag.value) return;
-	checkoutLoading.value = true;
-	feedback.value = null;
-	try {
-		const { location } = globalThis;
-		if (!location) throw new Error("Location unavailable");
-		const origin = location.origin;
-		const res = await $fetch("/api/checkout", {
-			body: {
-				bagId: bag.value.id,
-				cancelUrl: `${origin}/bags/${bagId.value}?status=cancel`,
-				successUrl: `${origin}/bags/${bagId.value}?status=success`,
-				userId: "demo-user",
-			},
-			method: "POST",
-		});
-		if (res?.url) {
-			location.href = res.url as string;
-		} else {
-			feedback.value = "Impossible de créer le paiement pour le moment.";
-		}
-	} catch (e) {
-		feedback.value = "Paiement indisponible. Merci de réessayer.";
-	} finally {
-		checkoutLoading.value = false;
-	}
+    if ($privyError.value) {
+        feedback.value = "Connexion indisponible. Merci de réessayer."
+        return
+    }
+    if (!$privyReady.value) {
+        feedback.value = "Initialisation de votre compte en cours."
+        return
+    }
+    if (!isAuthenticated.value) {
+        feedback.value = "Connectez-vous pour finaliser l'achat."
+        await router.push("/auth")
+        return
+    }
+    if (!bag.value) return
+    checkoutLoading.value = true
+    feedback.value = null
+    try {
+        const { location } = globalThis
+        if (!location) throw new Error("Location unavailable")
+        const origin = location.origin
+        const res = await $fetch("/api/checkout", {
+            body: {
+                bagId: bag.value.id,
+                cancelUrl: `${origin}/bags/${bagId.value}?status=cancel`,
+                successUrl: `${origin}/bags/${bagId.value}?status=success`,
+                userId: checkoutUserId.value,
+            },
+            method: "POST",
+        })
+        if (res?.url) {
+            location.href = res.url as string
+        } else {
+            feedback.value = "Impossible de créer le paiement pour le moment."
+        }
+    } catch (e) {
+        feedback.value = "Paiement indisponible. Merci de réessayer."
+    } finally {
+        checkoutLoading.value = false
+    }
 }
 
 watchEffect(() => {
-	const status = route.query.status;
-	if (status === "success")
-		feedback.value =
-			"Paiement confirmé. Votre certificat est associé à votre achat.";
-	if (status === "cancel")
-		feedback.value = "Paiement annulé. Vous pouvez réessayer à tout moment.";
-});
+    const status = route.query.status
+    if (status === "success")
+        feedback.value =
+            "Paiement confirmé. Votre certificat est associé à votre achat."
+    if (status === "cancel")
+        feedback.value = "Paiement annulé. Vous pouvez réessayer à tout moment."
+})
 </script>
 
 <template>
@@ -94,9 +126,13 @@ watchEffect(() => {
             :disabled="checkoutLoading"
             @click="startCheckout"
           >
-            {{ checkoutLoading ? 'Création du paiement...' : 'Procéder au paiement' }}
+            {{ checkoutLoading ? 'Création du paiement...' : isAuthenticated ? 'Procéder au paiement' : 'Se connecter pour payer' }}
           </button>
         </div>
+
+        <p v-if="!isAuthenticated" class="text-sm text-black/60">
+          Connexion requise pour passer au paiement.
+        </p>
 
         <div class="grid gap-3 rounded-2xl bg-white p-4 shadow-sm">
           <!-- <div class="flex items-center justify-between">
