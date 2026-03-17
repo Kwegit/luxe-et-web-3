@@ -102,9 +102,6 @@ const checkoutUserId = computed(() => {
     return user?.id ?? user?.userId ?? user?.user_id ?? "user"
 })
 
-const route = useRoute()
-const bagId = computed(() => String(route.params.id))
-
 const {
     data: bag,
     pending,
