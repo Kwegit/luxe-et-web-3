@@ -97,8 +97,7 @@ async function verifyEmailCode() {
                 },
             },
         )
-        const user = await $privy.user.get()
-        $privyUser.value = user.user ?? loggedIn?.user ?? null
+        $privyUser.value = loggedIn?.user ?? null
         message.value =
             "Espace sécurisé activé. Vous pouvez poursuivre vos achats."
         step.value = "done"

@@ -38,6 +38,10 @@ const activeIndex = ref(0)
 const activeItem = computed(() => mediaItems.value[activeIndex.value])
 const isVideo = computed(() => activeItem.value.type === "video")
 
+// Declared before watchEffect to avoid temporal dead zone
+const userInteracted = ref(false)
+let slideshowTimer: ReturnType<typeof setTimeout> | null = null
+
 // Reset slideshow state when the bag changes
 watchEffect(() => {
     // Access bagId to track dependency
@@ -46,10 +50,6 @@ watchEffect(() => {
     userInteracted.value = false
     clearAutoAdvance()
 })
-
-// Auto-advance photos after video ends, unless user has manually selected a photo
-const userInteracted = ref(false)
-let slideshowTimer: ReturnType<typeof setTimeout> | null = null
 
 function selectMedia(i: number) {
     userInteracted.value = true
