@@ -1,57 +1,62 @@
-import { randomUUID } from "node:crypto"
+import { randomUUID } from "node:crypto";
 
-type OrderStatus = "PENDING" | "PAYMENT_CREATED" | "PAID" | "FAILED"
+type OrderStatus = "PENDING" | "PAYMENT_CREATED" | "PAID" | "FAILED";
 
 type User = {
-    id: string
-    email: string
-    walletAddress: string
-    privyUserId?: string | null
-}
+  id: string;
+  email: string;
+  walletAddress: string;
+  privyUserId?: string | null;
+};
 
 type Bag = {
-    id: string
-    uid: string
-    name: string
-    description?: string | null
-    priceCents: number
-    currency: string
-}
+  id: string;
+  uid: string;
+  name: string;
+  description?: string | null;
+  priceCents: number;
+  currency: string;
+};
 
 type Order = {
-    id: string
-    userId: string
-    bagId: string
-    status: OrderStatus
-    stripeSessionId?: string | null
-    stripePaymentIntent?: string | null
-    onChainTokenId?: string | null
-    txHash?: string | null
-    createdAt: Date
-    updatedAt: Date
-}
+  id: string;
+  userId: string;
+  bagId: string;
+  status: OrderStatus;
+  stripeSessionId?: string | null;
+  stripePaymentIntent?: string | null;
+  onChainTokenId?: string | null;
+  pinataCid?: string | null;
+  tokenUri?: string | null;
+  txHash?: string | null;
+  processingError?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 const users: User[] = [
-    {
-        email: "demo@luxe.test",
-        id: "demo-user",
-        privyUserId: null,
-        walletAddress: "0x0000000000000000000000000000000000000000",
-    },
-]
+  {
+    email: "demo@luxe.test",
+    id: "demo-user",
+    privyUserId: null,
+    walletAddress:
+      process.env.DEMO_BUYER_WALLET ??
+      "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199",
+  },
+];
 
 const bags: Bag[] = [
-    {
-        currency: "EUR",
-        description: "Prototype certifié.",
-        id: "bag-demo",
-        name: "Sac Demo Vérifié",
-        priceCents: 125_000,
-        uid: "bag-demo-uid",
-    },
-]
+  {
+    currency: "EUR",
+    description: "Prototype certifié.",
+    id: "bag-demo",
+    name: "Sac Demo Vérifié",
+    priceCents: 125_000,
+    uid: "bag-demo-uid",
+  },
+];
 
-const orders: Order[] = []
+const orders: Order[] = [];
 
 export function findUser(userId: string) {
     return users.find((u) => u.id === userId || u.privyUserId === userId) || null
@@ -71,42 +76,57 @@ export function upsertUserByPrivyId(privyUserId: string): User {
 }
 
 export function findBag(bagId: string) {
-    return bags.find((b) => b.id === bagId) || null
+  return bags.find((b) => b.id === bagId) || null;
 }
 
 export function createOrder(input: {
-    userId: string
-    bagId: string
-    stripeSessionId?: string
+  userId: string;
+  bagId: string;
+  stripeSessionId?: string;
 }): Order {
-    const now = new Date()
-    const order: Order = {
-        bagId: input.bagId,
-        createdAt: now,
-        id: randomUUID(),
-        status: "PAYMENT_CREATED",
-        stripeSessionId: input.stripeSessionId ?? null,
-        updatedAt: now,
-        userId: input.userId,
-    }
-    orders.push(order)
-    return order
+  const now = new Date();
+  const order: Order = {
+    bagId: input.bagId,
+    createdAt: now,
+    id: randomUUID(),
+    status: "PAYMENT_CREATED",
+    stripeSessionId: input.stripeSessionId ?? null,
+    updatedAt: now,
+    userId: input.userId,
+  };
+  orders.push(order);
+  return order;
 }
 
 export function updateOrderBySession(
-    stripeSessionId: string,
-    update: Partial<Pick<Order, "status" | "stripePaymentIntent">>,
+  stripeSessionId: string,
+  update: Partial<
+    Pick<
+      Order,
+      | "onChainTokenId"
+      | "pinataCid"
+      | "processingError"
+      | "status"
+      | "stripePaymentIntent"
+      | "tokenUri"
+      | "txHash"
+    >
+  >,
 ) {
-    const target = orders.find((o) => o.stripeSessionId === stripeSessionId)
-    if (!target) return false
-    Object.assign(target, update, { updatedAt: new Date() })
-    return true
+  const target = orders.find((o) => o.stripeSessionId === stripeSessionId);
+  if (!target) return false;
+  Object.assign(target, update, { updatedAt: new Date() });
+  return true;
+}
+
+export function getOrderBySession(stripeSessionId: string) {
+  return orders.find((o) => o.stripeSessionId === stripeSessionId) || null;
 }
 
 export function listBags() {
-    return bags
+  return bags;
 }
 
 export function listOrders() {
-    return orders
+  return orders;
 }
