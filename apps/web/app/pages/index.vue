@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue"
+import bagPhoto from "~/assets/bag-1/photo-1.png"
 
 const { data: bags, pending } = await useFetch("/api/bags")
 
@@ -37,7 +38,7 @@ const featured = computed(() => (bags.value ?? []).slice(0, 3))
 
       <div class="relative overflow-hidden rounded-3xl bg-white shadow-lg">
         <div class="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-black/80" aria-hidden="true" />
-        <img class="h-full w-full object-cover" src="https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=1200&auto=format&fit=crop" alt="Sac de luxe" />
+        <img class="h-full w-full object-cover" :src="bagPhoto" alt="Sac de luxe" />
         <div class="absolute inset-0 flex flex-col justify-between p-6 text-white">
           <div>
             <p class="text-xs uppercase tracking-[0.3em]">Certificat</p>
@@ -77,7 +78,7 @@ const featured = computed(() => (bags.value ?? []).slice(0, 3))
       <div v-else class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
         <article v-for="bag in featured" :key="bag.id" class="space-y-3">
           <NuxtLink :to="`/bags/${bag.id}`" class="block overflow-hidden rounded-2xl bg-white shadow transition hover:-translate-y-1">
-            <img class="h-72 w-full object-cover" :src="bag.image ?? 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=1200&auto=format&fit=crop'" :alt="bag.name" />
+            <img class="h-72 w-full object-cover" :src="bag.image ?? bagPhoto" :alt="bag.name" />
           </NuxtLink>
           <div class="flex items-start justify-between">
             <div>

@@ -1,6 +1,88 @@
 <script setup lang="ts">
 import type { User } from "@privy-io/js-sdk-core"
-import { computed, ref, watchEffect } from "vue"
+import { computed, onUnmounted, ref, watchEffect } from "vue"
+import { useRoute } from "vue-router"
+
+// POC: media assets for bag-1
+import photo1 from "~/assets/bag-1/photo-1.png"
+import photo2 from "~/assets/bag-1/photo-2.png"
+import photo3 from "~/assets/bag-1/photo-3.png"
+import photo4 from "~/assets/bag-1/photo-4.png"
+import photo5 from "~/assets/bag-1/photo-5.png"
+import photo6 from "~/assets/bag-1/photo-6.png"
+import videoSrc from "~/assets/bag-1/video.mp4"
+
+type MediaItem = { type: "video"; src: string } | { type: "photo"; alt: string; src: string }
+
+// Map media items by bag id; currently only one bag is defined.
+const mediaByBagId: Record<string, MediaItem[]> = {
+    "bag-demo": [
+        { type: "video", src: videoSrc },
+        { type: "photo", alt: "Photo 1", src: photo1 },
+        { type: "photo", alt: "Photo 2", src: photo2 },
+        { type: "photo", alt: "Photo 3", src: photo3 },
+        { type: "photo", alt: "Photo 4", src: photo4 },
+        { type: "photo", alt: "Photo 5", src: photo5 },
+        { type: "photo", alt: "Photo 6", src: photo6 },
+    ],
+}
+
+const route = useRoute()
+const bagId = computed(() => String(route.params.id ?? "bag-demo"))
+
+const mediaItems = computed<MediaItem[]>(() => {
+    return mediaByBagId[bagId.value] ?? mediaByBagId["bag-demo"]
+})
+
+const activeIndex = ref(0)
+const activeItem = computed(() => mediaItems.value[activeIndex.value])
+const isVideo = computed(() => activeItem.value.type === "video")
+
+// Reset slideshow state when the bag changes
+watchEffect(() => {
+    // Access bagId to track dependency
+    void bagId.value
+    activeIndex.value = 0
+    userInteracted.value = false
+    clearAutoAdvance()
+})
+
+// Auto-advance photos after video ends, unless user has manually selected a photo
+const userInteracted = ref(false)
+let slideshowTimer: ReturnType<typeof setTimeout> | null = null
+
+function selectMedia(i: number) {
+    userInteracted.value = true
+    activeIndex.value = i
+    clearAutoAdvance()
+}
+
+function onVideoEnded() {
+    if (userInteracted.value) return
+    startAutoAdvance(1)
+}
+
+function startAutoAdvance(fromIndex: number) {
+    clearAutoAdvance()
+    activeIndex.value = fromIndex
+    slideshowTimer = setTimeout(function advance() {
+        if (userInteracted.value) return
+        const nextPhoto = activeIndex.value + 1
+        if (nextPhoto < mediaItems.value.length) {
+            activeIndex.value = nextPhoto
+            slideshowTimer = setTimeout(advance, 3000)
+        }
+    }, 3000)
+}
+
+function clearAutoAdvance() {
+    if (slideshowTimer) {
+        clearTimeout(slideshowTimer)
+        slideshowTimer = null
+    }
+}
+
+onUnmounted(clearAutoAdvance)
 
 type PrivyUserWithIds = Partial<Pick<User, "id">> & {
     userId?: string
@@ -98,16 +180,62 @@ watchEffect(() => {
       <button class="ml-2 underline" @click="refresh">Réessayer</button>
     </div>
 
-    <div v-else class="grid gap-10 lg:grid-cols-[1.1fr,0.9fr]">
-      <div class="overflow-hidden rounded-3xl bg-white shadow">
-        <img
-          class="h-full w-full object-cover"
-          :src="bag.image ?? 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=1200&auto=format&fit=crop'"
-          :alt="bag.name"
-        />
-      </div>
+    <div v-else class="space-y-10">
 
-      <div class="space-y-6">
+      <!-- Galerie + infos -->
+      <div class="grid gap-10 lg:grid-cols-[1.1fr,0.9fr]">
+        <!-- Galerie media (vidéo en premier, comme Steam) -->
+        <div class="space-y-3">
+          <!-- Viewer principal -->
+          <div class="overflow-hidden rounded-3xl bg-black shadow aspect-[4/3]">
+            <video
+              v-if="isVideo"
+              :key="'video'"
+              class="h-full w-full object-contain"
+              controls
+              autoplay
+              muted
+              playsinline
+              preload="metadata"
+              :src="(activeItem as { type: 'video'; src: string }).src"
+              @ended="onVideoEnded"
+            />
+            <img
+              v-else
+              :key="activeIndex"
+              class="h-full w-full object-cover"
+              :src="(activeItem as { type: 'photo'; alt: string; src: string }).src"
+              :alt="(activeItem as { type: 'photo'; alt: string; src: string }).alt"
+            />
+          </div>
+          <!-- Miniatures -->
+          <div class="flex gap-2 overflow-x-auto pb-1">
+            <button
+              v-for="(item, i) in mediaItems"
+              :key="i"
+              class="shrink-0 w-20 h-14 overflow-hidden rounded-lg transition ring-2"
+              :class="activeIndex === i ? 'ring-black' : 'ring-transparent hover:ring-black/30'"
+              :aria-label="item.type === 'video' ? 'Lire la vidéo' : item.alt"
+              @click="selectMedia(i)"
+            >
+              <template v-if="item.type === 'video'">
+                <div class="w-full h-full bg-neutral-800 flex items-center justify-center text-white">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                </div>
+              </template>
+              <img
+                v-else
+                :src="item.src"
+                :alt="item.alt"
+                class="w-full h-full object-cover"
+                :loading="activeIndex === i ? 'eager' : 'lazy'"
+                :decoding="activeIndex === i ? 'sync' : 'async'"
+              />
+            </button>
+          </div>
+        </div>
+
+        <div class="space-y-6">
         <div class="space-y-2">
           <p class="text-xs uppercase tracking-[0.25em] text-black/60">Certificat numérique</p>
           <h1 class="text-3xl font-semibold">{{ bag.name }}</h1>
@@ -151,6 +279,8 @@ watchEffect(() => {
           {{ feedback }}
         </div>
       </div>
-    </div>
+      </div><!-- end grid -->
+
+    </div><!-- end v-else -->
   </div>
 </template>
