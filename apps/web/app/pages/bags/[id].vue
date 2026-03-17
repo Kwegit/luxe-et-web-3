@@ -158,7 +158,7 @@ watchEffect(() => {
     const status = route.query.status
     if (status === "success")
         feedback.value =
-            "Paiement confirmé. Votre certificat est associé à votre achat."
+            "Merci pour votre achat. Votre pièce et sa preuve d'authenticité sont désormais disponibles dans votre compte."
     if (status === "cancel")
         feedback.value = "Paiement annulé. Vous pouvez réessayer à tout moment."
 })
@@ -234,12 +234,11 @@ watchEffect(() => {
 
         <div class="space-y-6">
         <div class="space-y-2">
-          <p class="text-xs uppercase tracking-[0.25em] text-black/60">Certificat numérique</p>
+          <p class="text-xs uppercase tracking-[0.25em] text-black/60">Maison William</p>
           <h1 class="text-3xl font-semibold">{{ bag.name }}</h1>
-          <!-- <p class="text-sm uppercase tracking-[0.2em] text-black/60">UID : {{ bag.uid }}</p> -->
         </div>
 
-        <p class="text-base text-black/70">{{ bag.description || 'Certificat sécurisé associé à votre achat.' }}</p>
+        <p class="text-base text-black/70">{{ bag.description || 'Pièce artisanale de la maison William.' }}</p>
 
         <div class="flex items-center justify-between rounded-2xl bg-white p-4 shadow-sm">
           <div>
@@ -260,15 +259,8 @@ watchEffect(() => {
         </p>
 
         <div class="grid gap-3 rounded-2xl bg-white p-4 shadow-sm">
-          <!-- <div class="flex items-center justify-between">
-            <div>
-              <p class="text-xs uppercase tracking-[0.2em] text-black/60">Numéro de série</p>
-              <p class="font-mono text-sm">{{ bag.uid }}</p>
-            </div>
-            <span class="rounded-full bg-black px-3 py-1 text-xs text-white">Vérifié</span>
-          </div> -->
           <p class="text-sm text-black/70">
-            Le certificat est stocké dans votre coffre privé. Vous pourrez le vérifier depuis votre compte et sur votre reçu de paiement.
+            À l'achat, une preuve d'authenticité est automatiquement associée à votre compte, consultable à tout moment.
           </p>
         </div>
 

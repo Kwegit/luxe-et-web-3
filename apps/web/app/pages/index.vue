@@ -11,10 +11,10 @@ const featured = computed(() => (bags.value ?? []).slice(0, 3))
   <div class="space-y-16">
     <section class="grid items-center gap-10 lg:grid-cols-2">
       <div class="space-y-6">
-        <p class="inline-flex rounded-full bg-black px-3 py-1 text-xs uppercase tracking-[0.25em] text-white">Édition vérifiée</p>
-        <h1 class="text-5xl font-semibold leading-tight">Sacs d'exception avec certificat numérique.</h1>
+        <p class="inline-flex rounded-full bg-black px-3 py-1 text-xs uppercase tracking-[0.25em] text-white">Maison William</p>
+        <h1 class="text-5xl font-semibold leading-tight">Des pièces d'exception, livrées avec leur preuve d'authenticité.</h1>
         <p class="max-w-2xl text-lg text-black/70">
-          Chaque pièce possède un un certificat stocké dans votre coffre privé, créé automatiquement lors de l'inscription.
+          Chaque sac est sélectionné avec soin. À l'achat, une preuve d'authenticité est automatiquement associée à votre compte.
         </p>
         <div class="flex flex-wrap gap-3">
           <NuxtLink to="/bags" class="rounded-full bg-black px-5 py-3 text-white transition hover:bg-neutral-900">Voir la collection</NuxtLink>
@@ -22,16 +22,16 @@ const featured = computed(() => (bags.value ?? []).slice(0, 3))
         </div>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-3 text-sm">
           <div class="rounded-2xl bg-white p-4 shadow-sm">
-            <p class="font-semibold">Certificat numérique</p>
-            <p class="text-black/60">Vérifiable à tout moment.</p>
+            <p class="font-semibold">Authenticité garantie</p>
+            <p class="text-black/60">Vérifiable depuis votre compte.</p>
           </div>
           <div class="rounded-2xl bg-white p-4 shadow-sm">
-            <p class="font-semibold">Paiement simple</p>
-            <p class="text-black/60">Checkout Stripe en une étape.</p>
+            <p class="font-semibold">Paiement sécurisé</p>
+            <p class="text-black/60">Rapide et sans friction.</p>
           </div>
           <div class="rounded-2xl bg-white p-4 shadow-sm">
-            <p class="font-semibold">Coffre privé</p>
-            <p class="text-black/60">Créé automatiquement lors de l'inscription.</p>
+            <p class="font-semibold">Espace personnel</p>
+            <p class="text-black/60">Créé automatiquement à l'inscription.</p>
           </div>
         </div>
       </div>
@@ -41,17 +41,13 @@ const featured = computed(() => (bags.value ?? []).slice(0, 3))
         <img class="h-full w-full object-cover" :src="bagPhoto" alt="Sac de luxe" />
         <div class="absolute inset-0 flex flex-col justify-between p-6 text-white">
           <div>
-            <p class="text-xs uppercase tracking-[0.3em]">Certificat</p>
-            <p class="text-2xl font-semibold">Badge numérique</p>
+            <p class="text-xs uppercase tracking-[0.3em] text-white/70">Maison William</p>
+            <p class="text-2xl font-semibold">Collection exclusive</p>
           </div>
           <div class="grid gap-3">
-            <!-- <div class="rounded-2xl bg-white/10 p-4">
-              <p class="text-xs uppercase tracking-[0.2em] text-white/80">Numéro de série</p>
-              <p class="font-mono text-sm">bag-uid-xxxxx</p>
-            </div> -->
             <div class="rounded-2xl bg-white/10 p-4">
-              <p class="text-xs uppercase tracking-[0.2em] text-white/80">Certificat sécurisé</p>
-              <p class="font-mono text-sm">stocké dans votre coffre</p>
+              <p class="text-xs uppercase tracking-[0.2em] text-white/80">Authenticité</p>
+              <p class="text-sm">Garantie à vie</p>
             </div>
           </div>
         </div>
