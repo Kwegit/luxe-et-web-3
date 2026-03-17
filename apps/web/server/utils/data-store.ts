@@ -59,7 +59,20 @@ const bags: Bag[] = [
 const orders: Order[] = [];
 
 export function findUser(userId: string) {
-  return users.find((u) => u.id === userId) || null;
+    return users.find((u) => u.id === userId || u.privyUserId === userId) || null
+}
+
+export function upsertUserByPrivyId(privyUserId: string): User {
+    const existing = findUser(privyUserId)
+    if (existing) return existing
+    const user: User = {
+        email: "",
+        id: randomUUID(),
+        privyUserId,
+        walletAddress: "0x0000000000000000000000000000000000000000",
+    }
+    users.push(user)
+    return user
 }
 
 export function findBag(bagId: string) {
