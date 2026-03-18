@@ -52,7 +52,7 @@ const filtered = computed(() => {
         <NuxtLink :to="`/bags/${bag.id}`" class="block overflow-hidden rounded-2xl bg-white shadow transition hover:-translate-y-1">
           <img
             class="h-72 w-full object-cover"
-            :src="bag.image ?? bagPhoto"
+            :src="(bag as any).image ?? bagPhoto"
             :alt="bag.name"
           />
         </NuxtLink>

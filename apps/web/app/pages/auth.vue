@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { User } from "@privy-io/js-sdk-core";
+import type { User } from "@privy-io/api-types";
 import { computed, ref, watchEffect } from "vue";
 
 // biome-ignore lint/suspicious/noExplicitAny: Privy linked_accounts shape varies by SDK version
@@ -31,12 +31,11 @@ const error = ref<string | null>(null);
 
 const hasPrivyError = computed(() => !!$privyError.value);
 const isAuthenticated = computed(() => !!$privyUser.value);
-const userEmail = computed(
-	() =>
-		$privyUser.value?.email?.address ??
-		$privyUser.value?.emails?.[0]?.address ??
-		null,
-);
+const userEmail = computed(() => {
+	// biome-ignore lint/suspicious/noExplicitAny: Privy User email shape varies by SDK version
+	const u = $privyUser.value as any;
+	return u?.email?.address ?? u?.emails?.[0]?.address ?? null;
+});
 const walletAddress = computed(() => getEmbeddedWallet($privyUser.value)?.address ?? null);
 
 watchEffect(() => {

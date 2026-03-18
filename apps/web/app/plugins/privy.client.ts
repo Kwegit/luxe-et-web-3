@@ -1,4 +1,5 @@
-import Privy, { LocalStorage, type User } from "@privy-io/js-sdk-core"
+import Privy, { LocalStorage } from "@privy-io/js-sdk-core"
+import type { User } from "@privy-io/api-types"
 
 type PublicConfig = {
     privyAppId?: string
@@ -66,8 +67,9 @@ export default defineNuxtPlugin(() => {
 
     iframe.addEventListener("load", () => {
         if (iframe.contentWindow) {
-            client.embeddedWallet.setMessagePoster({
-                postMessage: (msg, origin, transfer) =>
+            // biome-ignore lint/suspicious/noExplicitAny: setMessagePoster not in SDK types
+            ;(client.embeddedWallet as any).setMessagePoster({
+                postMessage: (msg: unknown, origin: string, transfer?: unknown) =>
                     iframe.contentWindow!.postMessage(msg, origin, transfer as Transferable[] | undefined),
                 reload: () => { iframe.src = client.embeddedWallet.getURL() },
             })

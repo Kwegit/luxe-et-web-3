@@ -74,7 +74,7 @@ const featured = computed(() => (bags.value ?? []).slice(0, 3))
       <div v-else class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
         <article v-for="bag in featured" :key="bag.id" class="space-y-3">
           <NuxtLink :to="`/bags/${bag.id}`" class="block overflow-hidden rounded-2xl bg-white shadow transition hover:-translate-y-1">
-            <img class="h-72 w-full object-cover" :src="bag.image ?? bagPhoto" :alt="bag.name" />
+            <img class="h-72 w-full object-cover" :src="(bag as any).image ?? bagPhoto" :alt="bag.name" />
           </NuxtLink>
           <div class="flex items-start justify-between">
             <div>

@@ -91,7 +91,8 @@ async function registerPurchaseOnChain(input: {
   const signer = new Wallet(input.signerPrivateKey, provider);
   const contract = new Contract(input.contractAddress, REGISTRY_ABI, signer);
 
-  const tx = await contract.registerInitialPurchase(
+  // biome-ignore lint/suspicious/noExplicitAny: Contract ABI methods are dynamically typed
+  const tx = await (contract as any).registerInitialPurchase(
     input.clientWallet,
     input.tokenId,
     input.buyerName,

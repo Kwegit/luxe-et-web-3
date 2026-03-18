@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { User } from "@privy-io/js-sdk-core";
+import type { User } from "@privy-io/api-types";
 import { computed, onUnmounted, ref, watchEffect } from "vue";
 import { useRoute } from "vue-router";
 
@@ -33,12 +33,12 @@ const route = useRoute();
 const bagId = computed(() => String(route.params.id ?? "bag-demo"));
 
 const mediaItems = computed<MediaItem[]>(() => {
-  return mediaByBagId[bagId.value] ?? mediaByBagId["bag-demo"];
+  return mediaByBagId[bagId.value] ?? mediaByBagId["bag-demo"] ?? [];
 });
 
 const activeIndex = ref(0);
 const activeItem = computed(() => mediaItems.value[activeIndex.value]);
-const isVideo = computed(() => activeItem.value.type === "video");
+const isVideo = computed(() => activeItem.value?.type === "video");
 
 // Declared before watchEffect to avoid temporal dead zone
 const userInteracted = ref(false);
@@ -263,7 +263,7 @@ watchEffect(() => {
       class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
     >
       Cette pièce n'est pas disponible ou n'existe pas.
-      <button class="ml-2 underline" @click="refresh">Réessayer</button>
+      <button class="ml-2 underline" @click="() => refresh()">Réessayer</button>
     </div>
 
     <div v-else class="space-y-10">
