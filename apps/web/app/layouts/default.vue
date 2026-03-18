@@ -76,7 +76,7 @@ watch(
       </div>
     </header>
 
-    <main class="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6 sm:py-12">
+    <main class="mx-auto w-full max-w-6xl flex-1 overflow-x-hidden px-4 py-10 sm:px-6 sm:py-12">
       <slot />
     </main>
 

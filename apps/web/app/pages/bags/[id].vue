@@ -280,11 +280,11 @@ watchEffect(() => {
 
     <div v-else class="space-y-10">
       <!-- Galerie + infos -->
-      <div class="grid gap-10 lg:grid-cols-[1.1fr,0.9fr]">
+      <div class="grid gap-8 lg:gap-10 lg:grid-cols-[1.1fr,0.9fr]">
         <!-- Galerie media (vidéo en premier, comme Steam) -->
-        <div class="space-y-3">
+        <div class="min-w-0 space-y-3">
           <!-- Viewer principal -->
-          <div class="overflow-hidden rounded-3xl bg-black shadow aspect-[4/3]">
+          <div class="w-full overflow-hidden rounded-2xl bg-black shadow aspect-[4/3] sm:rounded-3xl">
             <video
               v-if="isVideo"
               :key="'video'"
@@ -310,7 +310,7 @@ watchEffect(() => {
             />
           </div>
           <!-- Miniatures -->
-          <div class="flex gap-2 overflow-x-auto pb-1">
+          <div class="flex gap-2 overflow-x-auto pb-1 min-w-0">
             <button
               v-for="(item, i) in mediaItems"
               :key="i"
