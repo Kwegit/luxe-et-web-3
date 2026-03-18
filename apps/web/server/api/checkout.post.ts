@@ -45,11 +45,8 @@ function buildCheckoutSessionPayload(
 }
 
 export default defineEventHandler(async (event) => {
-  console.info("[checkout] request received");
-
   const config = useRuntimeConfig();
   if (!config.stripeSecretKey) {
-    console.error("[checkout] missing Stripe secret key");
     throw createError({
       statusCode: 500,
       statusMessage: "Stripe secret key missing",
@@ -58,21 +55,8 @@ export default defineEventHandler(async (event) => {
 
   const { bagId, successUrl, cancelUrl, userId, buyerWallet } =
     await readBody(event);
-  console.info("[checkout] payload parsed", {
-    bagId,
-    hasBuyerWallet: Boolean(buyerWallet),
-    hasCancelUrl: Boolean(cancelUrl),
-    hasSuccessUrl: Boolean(successUrl),
-    userId,
-  });
 
   if (!bagId || !successUrl || !cancelUrl || !userId) {
-    console.error("[checkout] missing required fields", {
-      bagId,
-      cancelUrl,
-      successUrl,
-      userId,
-    });
     throw createError({
       statusCode: 400,
       statusMessage: "Missing bagId/userId/successUrl/cancelUrl",
@@ -80,10 +64,6 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!isWalletAddress(buyerWallet)) {
-    console.error("[checkout] missing or invalid buyer wallet", {
-      buyerWallet,
-      userId,
-    });
     throw createError({
       statusCode: 400,
       statusMessage: "Missing or invalid buyerWallet",
@@ -94,34 +74,17 @@ export default defineEventHandler(async (event) => {
 
   const bag = findBag(bagId);
   if (!bag) {
-    console.error("[checkout] bag not found", { bagId });
     throw createError({ statusCode: 404, statusMessage: "Bag not found" });
   }
 
   const stripe = new Stripe(config.stripeSecretKey);
-  console.info("[checkout] creating Stripe session", {
-    bagId: bag.id,
-    currency: bag.currency,
-    priceCents: bag.priceCents,
-    userId: user.id,
-  });
-
   const session = await stripe.checkout.sessions.create(
     buildCheckoutSessionPayload(bag, user, cancelUrl, successUrl),
   );
-  console.info("[checkout] Stripe session created", {
-    sessionId: session.id,
-    sessionUrl: session.url,
-  });
 
   createOrder({
     bagId: bag.id,
     stripeSessionId: session.id,
-    userId: user.id,
-  });
-  console.info("[checkout] order created", {
-    bagId: bag.id,
-    sessionId: session.id,
     userId: user.id,
   });
 

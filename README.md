@@ -1,44 +1,60 @@
 # Luxe Auth Marketplace
 
-Marketplace de sacs de luxe avec certification on-chain invisible pour l'utilisateur final. Stack : Nuxt 4 + Tailwind, bun, nuxt-auth-utils, Prisma/SQLite, Stripe Checkout, Privy embedded wallet, Pinata pour les metadonnees, contrats testes/deployes via Remix (Sepolia).
+Marketplace de sacs de luxe avec certification invisible pour l'utilisateur final. À chaque achat, un certificat d'authenticité est créé sur IPFS (Pinata) et optionnellement enregistré sur la blockchain Sepolia. L'acheteur retrouve ses certificats dans son espace personnel.
 
-## Demarrage rapide
-1) Copier l'exemple d'env : `cp .env.example .env` puis remplir les cles (Stripe, Privy, Pinata, signer Sepolia, contract address).
-2) Installer les dependances : `cd apps/web && bun install`.
-3) Preparer la base : `bun run db:push` puis `bun run db:seed` (toujours depuis `apps/web`).
-4) Lancer le dev server : `bun run dev` (ou `docker compose up --build`).
+Stack : Nuxt 4 + Tailwind, Bun, Privy embedded wallet, Stripe Checkout, Pinata IPFS, contrat ERC721 déployé sur Sepolia via Hardhat.
+
+## Démarrage rapide
+
+1. Copier l'exemple d'env : `cp .env.example .env` puis remplir les clés.
+2. Installer les dépendances : `cd apps/web && bun install`.
+3. Lancer le dev server : `bun run dev` (ou `docker compose up --build`).
 
 Dev server : http://localhost:3000
 
 ## Docker
+
 ```
 docker compose up --build
+# Avec écoute Stripe CLI (webhooks en local) :
+docker compose --profile stripe up
 ```
-- Service `web` (bun) expose le port 3000.
-- Les donnees SQLite sont persistees dans le repo (fichier `apps/web/prisma/dev.db`).
 
-## Envs (resume)
-- `STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
-- `PRIVY_APP_ID`, `PRIVY_EMBEDDED_WALLET_SECRET`
-- `PINATA_API_KEY`, `PINATA_SECRET_API_KEY`
-- `DATABASE_URL` (par defaut `file:./apps/web/prisma/dev.db`)
-- `SEPOLIA_SIGNER_KEY`, `NUXT_PUBLIC_CHAIN_ID` (11155111), `NUXT_PUBLIC_CONTRACT_ADDRESS`
+- Service `web` (Bun/Nuxt) expose le port 3000.
+- Service `hardhat` expose le nœud local sur le port 8545.
+- Les données sont en mémoire (perdues au redémarrage du container `web`).
 
-## Prisma
-- Schema : `apps/web/prisma/schema.prisma`
-- Scripts : `bun run db:push`, `bun run db:migrate`, `bun run db:seed`, `bun run db:studio`
-- Seed : cree un user demo + un sac et une commande en attente.
+## Variables d'environnement
 
-## Stripe
-- Endpoint Checkout : `POST /api/checkout` (bagId, userId, successUrl, cancelUrl)
-- Webhook : `POST /api/webhooks/stripe` (env `STRIPE_WEBHOOK_SECRET` requis). Apres paiement, l'ordre passe a `PAID` et alimente la file de mint (a implementer).
+| Variable | Description |
+|---|---|
+| `STRIPE_PUBLISHABLE_KEY` | Clé publique Stripe |
+| `STRIPE_SECRET_KEY` | Clé secrète Stripe |
+| `STRIPE_WEBHOOK_SECRET` | Secret du webhook Stripe |
+| `PRIVY_APP_ID` | App ID Privy |
+| `NUXT_PUBLIC_PRIVY_APP_ID` | App ID Privy (côté client) |
+| `PRIVY_EMBEDDED_WALLET_SECRET` | Secret wallet embarqué Privy |
+| `PINATA_API_KEY` | Clé API Pinata (v1) |
+| `PINATA_SECRET_API_KEY` | Secret API Pinata (v1) |
+| `SEPOLIA_SIGNER_KEY` | Clé privée du signer on-chain |
+| `NUXT_PUBLIC_CHAIN_ID` | `11155111` (Sepolia) |
+| `NUXT_PUBLIC_CONTRACT_ADDRESS` | Adresse du contrat ERC721 déployé |
 
-## Auth & wallet (nuxt-auth-utils + Privy)
-- Authentification geree par nuxt-auth-utils (configuration a completer) avec stockage SQLite via Prisma.
-- Creation automatique de wallet via Privy embedded wallet lors de l'inscription; l'adresse est stockee en base (`walletAddress`, `privyUserId`).
+## Flux d'achat
 
-## Contrats (Remix)
-- Dossier : `contracts/` pour stocker ABI et adresses deployees depuis Remix sur Sepolia.
-- Apres deploiement, renseigner `NUXT_PUBLIC_CONTRACT_ADDRESS` et deposer l'ABI dans `contracts/abi/` pour usage serveur.
+1. L'utilisateur s'authentifie via Privy (wallet embarqué créé automatiquement).
+2. Il sélectionne un sac → `POST /api/checkout` crée une session Stripe.
+3. Après paiement, le webhook Stripe (`POST /api/webhooks/stripe`) :
+   - Épingle les métadonnées sur **Pinata IPFS** (certificat permanent).
+   - Si `NUXT_PUBLIC_CONTRACT_ADDRESS` est configuré : enregistre l'achat on-chain (ERC721).
+4. Le certificat apparaît dans l'espace personnel (`/compte`).
 
-# luxe-et-web-3
+## Contrat ERC721 (`contracts/`)
+
+```bash
+npm run hardhat node          # Nœud local (port 8545)
+npx hardhat compile           # Compiler
+npx hardhat run scripts/deploy.js --network localhost  # Déployer en local
+```
+
+Après déploiement sur Sepolia, renseigner `NUXT_PUBLIC_CONTRACT_ADDRESS` dans `.env`.

@@ -38,16 +38,7 @@ type Order = {
   updatedAt: Date;
 };
 
-const users: User[] = [
-  {
-    email: "demo@luxe.test",
-    id: "demo-user",
-    privyUserId: null,
-    walletAddress:
-      process.env.DEMO_BUYER_WALLET ??
-      "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199",
-  },
-];
+const users: User[] = [];
 
 const bags: Bag[] = [
   {
@@ -87,10 +78,7 @@ export function upsertUserByPrivyId(
     email: "",
     id: randomUUID(),
     privyUserId,
-    walletAddress:
-      validWallet ??
-      process.env.DEMO_BUYER_WALLET ??
-      "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199",
+    walletAddress: validWallet ?? "",
   };
   users.push(user);
   return user;
@@ -150,4 +138,10 @@ export function listBags() {
 
 export function listOrders() {
   return orders;
+}
+
+export function listOrdersByPrivyId(privyUserId: string) {
+  const user = findUser(privyUserId);
+  if (!user) return [];
+  return orders.filter((o) => o.userId === user.id);
 }

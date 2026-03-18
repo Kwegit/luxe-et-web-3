@@ -14,7 +14,7 @@
         <div class="flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em]">
           <NuxtLink class="rounded-full px-4 py-2 transition hover:bg-black hover:text-white" to="/">Découvrir</NuxtLink>
           <NuxtLink class="rounded-full px-4 py-2 transition hover:bg-black hover:text-white" to="/bags">Collection</NuxtLink>
-          <NuxtLink class="rounded-full border border-black px-4 py-2 transition hover:bg-black hover:text-white" to="/auth">Mon compte</NuxtLink>
+          <NuxtLink class="rounded-full border border-black px-4 py-2 transition hover:bg-black hover:text-white" to="/compte">Mon compte</NuxtLink>
         </div>
       </nav>
     </header>
