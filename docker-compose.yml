@@ -39,6 +39,9 @@ services:
       - stripe
     depends_on:
       - web
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     env_file:
       - .env
     command:
