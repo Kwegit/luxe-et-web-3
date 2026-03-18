@@ -2,16 +2,10 @@
 import type { User } from "@privy-io/js-sdk-core";
 import { computed, ref, watchEffect } from "vue";
 
-type LinkedAccount = {
-	type?: string;
-	address?: string;
-};
-
-type UserWithAccounts = User & {
-	// biome-ignore lint/style/useNamingConvention: external shape from Privy SDK
-	linked_accounts?: LinkedAccount[];
-	linkedAccounts?: LinkedAccount[];
-};
+// biome-ignore lint/suspicious/noExplicitAny: Privy linked_accounts shape varies by SDK version
+const getEmbeddedWallet = (user: User | null) => (user as any)?.linked_accounts?.find(
+	(a: any) => a.type === "wallet" && a.wallet_client_type === "privy" && a.connector_type === "embedded"
+) ?? null;
 
 const toMessage = (err: unknown, fallback: string) => {
 	if (err instanceof Error) return err.message;
@@ -43,13 +37,7 @@ const userEmail = computed(
 		$privyUser.value?.emails?.[0]?.address ??
 		null,
 );
-const walletAddress = computed(() => {
-	const user = $privyUser.value as UserWithAccounts | null;
-	const wallets =
-		user?.linked_accounts ?? user?.linkedAccounts ?? ([] as LinkedAccount[]);
-	const embedded = wallets.find((wallet) => wallet.type === "embedded_wallet");
-	return embedded?.address ?? null;
-});
+const walletAddress = computed(() => getEmbeddedWallet($privyUser.value)?.address ?? null);
 
 watchEffect(() => {
 	if ($privyUser.value) {
@@ -93,6 +81,20 @@ async function verifyEmailCode() {
 			"login-or-sign-up",
 		);
 		$privyUser.value = loggedIn?.user ?? null;
+		// Create embedded wallet if user doesn't have one yet (whitelabel login doesn't auto-create)
+		if (!walletAddress.value) {
+			try {
+				// create() returns refreshed user directly via refreshSession() inside the SDK
+				const result = await $privy.embeddedWallet.create({})
+				$privyUser.value = (result as any)?.user ?? $privyUser.value
+				console.info("[privy] user logged in — wallet created:", walletAddress.value ?? "none")
+			} catch (walletErr: unknown) {
+				console.warn("[privy] embedded wallet creation skipped:", toMessage(walletErr, "unknown error"))
+				console.info("[privy] user logged in — wallet:", walletAddress.value ?? "none")
+			}
+		} else {
+			console.info("[privy] user logged in — wallet:", walletAddress.value)
+		}
 		message.value =
 			"Espace sécurisé activé. Vous pouvez poursuivre vos achats.";
 		step.value = "done";
