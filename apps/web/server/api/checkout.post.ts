@@ -1,9 +1,13 @@
-import Stripe from "stripe"
-import { createOrder, findBag, upsertUserByPrivyId } from "../utils/data-store"
+import Stripe from "stripe";
+import { createOrder, findBag, upsertUserByPrivyId } from "../utils/data-store";
+
+function isWalletAddress(value: string | null | undefined): value is string {
+  return typeof value === "string" && /^0x[a-fA-F0-9]{40}$/.test(value);
+}
 
 function buildCheckoutSessionPayload(
   bag: NonNullable<ReturnType<typeof findBag>>,
-  user: NonNullable<ReturnType<typeof findUser>>,
+  user: ReturnType<typeof upsertUserByPrivyId>,
   cancelUrl: string,
   successUrl: string,
 ): Stripe.Checkout.SessionCreateParams {
@@ -52,9 +56,11 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const { bagId, successUrl, cancelUrl, userId } = await readBody(event);
+  const { bagId, successUrl, cancelUrl, userId, buyerWallet } =
+    await readBody(event);
   console.info("[checkout] payload parsed", {
     bagId,
+    hasBuyerWallet: Boolean(buyerWallet),
     hasCancelUrl: Boolean(cancelUrl),
     hasSuccessUrl: Boolean(successUrl),
     userId,
@@ -73,7 +79,18 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-    const user = upsertUserByPrivyId(userId)
+  if (!isWalletAddress(buyerWallet)) {
+    console.error("[checkout] missing or invalid buyer wallet", {
+      buyerWallet,
+      userId,
+    });
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Missing or invalid buyerWallet",
+    });
+  }
+
+  const user = upsertUserByPrivyId(userId, buyerWallet);
 
   const bag = findBag(bagId);
   if (!bag) {

@@ -1,5 +1,9 @@
 import { randomUUID } from "node:crypto";
 
+function isWalletAddress(value: string | null | undefined): value is string {
+  return typeof value === "string" && /^0x[a-fA-F0-9]{40}$/.test(value);
+}
+
 type OrderStatus = "PENDING" | "PAYMENT_CREATED" | "PAID" | "FAILED";
 
 type User = {
@@ -59,20 +63,37 @@ const bags: Bag[] = [
 const orders: Order[] = [];
 
 export function findUser(userId: string) {
-    return users.find((u) => u.id === userId || u.privyUserId === userId) || null
+  return users.find((u) => u.id === userId || u.privyUserId === userId) || null;
 }
 
-export function upsertUserByPrivyId(privyUserId: string): User {
-    const existing = findUser(privyUserId)
-    if (existing) return existing
-    const user: User = {
-        email: "",
-        id: randomUUID(),
-        privyUserId,
-        walletAddress: "0x0000000000000000000000000000000000000000",
+export function upsertUserByPrivyId(
+  privyUserId: string,
+  walletAddress?: string,
+): User {
+  const normalizedWallet = walletAddress?.trim();
+  const validWallet = isWalletAddress(normalizedWallet)
+    ? normalizedWallet
+    : null;
+
+  const existing = findUser(privyUserId);
+  if (existing) {
+    if (validWallet) {
+      existing.walletAddress = validWallet;
     }
-    users.push(user)
-    return user
+    return existing;
+  }
+
+  const user: User = {
+    email: "",
+    id: randomUUID(),
+    privyUserId,
+    walletAddress:
+      validWallet ??
+      process.env.DEMO_BUYER_WALLET ??
+      "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199",
+  };
+  users.push(user);
+  return user;
 }
 
 export function findBag(bagId: string) {
