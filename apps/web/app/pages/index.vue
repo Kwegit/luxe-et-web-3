@@ -12,7 +12,7 @@ const featured = computed(() => (bags.value ?? []).slice(0, 3))
     <section class="grid items-center gap-10 lg:grid-cols-2">
       <div class="space-y-6">
         <p class="inline-flex rounded-full bg-black px-3 py-1 text-xs uppercase tracking-[0.25em] text-white">Maison William</p>
-        <h1 class="text-5xl font-semibold leading-tight">Des pièces d'exception, livrées avec leur preuve d'authenticité.</h1>
+        <h1 class="text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl">Des pièces d'exception, livrées avec leur preuve d'authenticité.</h1>
         <p class="max-w-2xl text-lg text-black/70">
           Chaque sac est sélectionné avec soin. À l'achat, une preuve d'authenticité est automatiquement associée à votre compte.
         </p>

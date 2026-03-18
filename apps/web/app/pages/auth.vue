@@ -1,145 +1,167 @@
 <script setup lang="ts">
-import type { User } from "@privy-io/api-types";
-import { computed, ref, watchEffect } from "vue";
+import type { User } from "@privy-io/api-types"
+import { computed, ref, watchEffect } from "vue"
 
-// biome-ignore lint/suspicious/noExplicitAny: Privy linked_accounts shape varies by SDK version
-const getEmbeddedWallet = (user: User | null) => (user as any)?.linked_accounts?.find(
-	(a: any) => a.type === "wallet" && a.wallet_client_type === "privy" && a.connector_type === "embedded"
-) ?? null;
+const getEmbeddedWallet = (user: User | null) =>
+    // biome-ignore lint/suspicious/noExplicitAny: Privy linked_accounts shape varies by SDK version
+    (user as any)?.linked_accounts?.find(
+        // biome-ignore lint/suspicious/noExplicitAny: Privy linked_accounts shape varies by SDK version
+        (a: any) =>
+            a.type === "wallet" &&
+            a.wallet_client_type === "privy" &&
+            a.connector_type === "embedded",
+    ) ?? null
 
 const toMessage = (err: unknown, fallback: string) => {
-	if (err instanceof Error) return err.message;
-	if (typeof err === "string") return err;
-	return fallback;
-};
+    if (err instanceof Error) return err.message
+    if (typeof err === "string") return err
+    return fallback
+}
 
-const nuxtApp = useNuxtApp();
+const nuxtApp = useNuxtApp()
 // guard: plugin may fail if env missing; fallback to local refs to avoid runtime crash
-const $privy = nuxtApp.$privy;
-const $privyUser = nuxtApp.$privyUser ?? ref<User | null>(null);
-const $privyReady = nuxtApp.$privyReady ?? ref(false);
+const $privy = nuxtApp.$privy
+const $privyUser = nuxtApp.$privyUser ?? ref<User | null>(null)
+const $privyReady = nuxtApp.$privyReady ?? ref(false)
 const $privyError =
-	nuxtApp.$privyError ??
-	ref<string | null>("Privy non initialisé (appId manquant)");
+    nuxtApp.$privyError ??
+    ref<string | null>("Privy non initialisé (appId manquant)")
 
-const step = ref<"email" | "otp" | "done">("email");
-const email = ref("");
-const otp = ref("");
-const loading = ref(false);
-const message = ref<string | null>(null);
-const error = ref<string | null>(null);
+const step = ref<"email" | "otp" | "done">("email")
+const email = ref("")
+const otp = ref("")
+const loading = ref(false)
+const message = ref<string | null>(null)
+const error = ref<string | null>(null)
 
-const hasPrivyError = computed(() => !!$privyError.value);
-const isAuthenticated = computed(() => !!$privyUser.value);
+const hasPrivyError = computed(() => !!$privyError.value)
+const isAuthenticated = computed(() => !!$privyUser.value)
 const userEmail = computed(() => {
-	// biome-ignore lint/suspicious/noExplicitAny: Privy User email shape varies by SDK version
-	const u = $privyUser.value as any;
-	return u?.email?.address ?? u?.emails?.[0]?.address ?? null;
-});
-const walletAddress = computed(() => getEmbeddedWallet($privyUser.value)?.address ?? null);
+    // biome-ignore lint/suspicious/noExplicitAny: Privy User email shape varies by SDK version
+    const u = $privyUser.value as any
+    return u?.email?.address ?? u?.emails?.[0]?.address ?? null
+})
+const walletAddress = computed(
+    () => getEmbeddedWallet($privyUser.value)?.address ?? null,
+)
 
 watchEffect(() => {
-	if ($privyUser.value) {
-		step.value = "done";
-	}
-});
+    if ($privyUser.value) {
+        step.value = "done"
+    }
+})
 
 async function sendEmailCode() {
-	if (hasPrivyError.value || !$privy) {
-		error.value = $privyError.value ?? "Privy non initialisé.";
-		return;
-	}
-	if (loading.value || !$privyReady.value) return;
-	loading.value = true;
-	error.value = null;
-	message.value = null;
-	try {
-		await $privy.auth.email.sendCode(email.value);
-		message.value = "Un code à 6 chiffres a été envoyé à votre email.";
-		step.value = "otp";
-	} catch (err: unknown) {
-		error.value = toMessage(err, "Impossible d'envoyer le code.");
-	} finally {
-		loading.value = false;
-	}
+    if (hasPrivyError.value || !$privy) {
+        error.value = $privyError.value ?? "Privy non initialisé."
+        return
+    }
+    if (loading.value || !$privyReady.value) return
+    loading.value = true
+    error.value = null
+    message.value = null
+    try {
+        await $privy.auth.email.sendCode(email.value)
+        message.value = "Un code à 6 chiffres a été envoyé à votre email."
+        step.value = "otp"
+    } catch (err: unknown) {
+        error.value = toMessage(err, "Impossible d'envoyer le code.")
+    } finally {
+        loading.value = false
+    }
 }
 
 async function verifyEmailCode() {
-	if (hasPrivyError.value || !$privy) {
-		error.value = $privyError.value ?? "Privy non initialisé.";
-		return;
-	}
-	if (loading.value || !$privyReady.value) return;
-	loading.value = true;
-	error.value = null;
-	message.value = null;
-	try {
-		const loggedIn = await $privy.auth.email.loginWithCode(
-			email.value,
-			otp.value,
-			"login-or-sign-up",
-		);
-		$privyUser.value = loggedIn?.user ?? null;
-		// Create embedded wallet if user doesn't have one yet (whitelabel login doesn't auto-create)
-		if (!walletAddress.value) {
-			try {
-				// create() returns refreshed user directly via refreshSession() inside the SDK
-				const result = await $privy.embeddedWallet.create({})
-				$privyUser.value = (result as any)?.user ?? $privyUser.value
-				console.info("[privy] user logged in — wallet created:", walletAddress.value ?? "none")
-			} catch (walletErr: unknown) {
-				console.warn("[privy] embedded wallet creation skipped:", toMessage(walletErr, "unknown error"))
-				console.info("[privy] user logged in — wallet:", walletAddress.value ?? "none")
-			}
-		} else {
-			console.info("[privy] user logged in — wallet:", walletAddress.value)
-		}
-		message.value =
-			"Espace sécurisé activé. Vous pouvez poursuivre vos achats.";
-		step.value = "done";
-	} catch (err: unknown) {
-		const msg = toMessage(err, "Code incorrect ou expiré.");
-		if (msg.toLowerCase().includes("embedded wallet proxy not initialized")) {
-			error.value =
-				"Initialisation en cours, veuillez réessayer dans quelques secondes.";
-		} else {
-			error.value = msg;
-		}
-	} finally {
-		loading.value = false;
-	}
+    if (hasPrivyError.value || !$privy) {
+        error.value = $privyError.value ?? "Privy non initialisé."
+        return
+    }
+    if (loading.value || !$privyReady.value) return
+    loading.value = true
+    error.value = null
+    message.value = null
+    try {
+        const loggedIn = await $privy.auth.email.loginWithCode(
+            email.value,
+            otp.value,
+            "login-or-sign-up",
+        )
+        $privyUser.value = loggedIn?.user ?? null
+        // Create embedded wallet if user doesn't have one yet (whitelabel login doesn't auto-create)
+        if (!walletAddress.value) {
+            try {
+                // create() returns refreshed user directly via refreshSession() inside the SDK
+                const result = await $privy.embeddedWallet.create({})
+                // biome-ignore lint/suspicious/noExplicitAny: embeddedWallet.create() return type not exposed
+                $privyUser.value = (result as any)?.user ?? $privyUser.value
+                console.info(
+                    "[privy] user logged in — wallet created:",
+                    walletAddress.value ?? "none",
+                )
+            } catch (walletErr: unknown) {
+                console.warn(
+                    "[privy] embedded wallet creation skipped:",
+                    toMessage(walletErr, "unknown error"),
+                )
+                console.info(
+                    "[privy] user logged in — wallet:",
+                    walletAddress.value ?? "none",
+                )
+            }
+        } else {
+            console.info(
+                "[privy] user logged in — wallet:",
+                walletAddress.value,
+            )
+        }
+        message.value =
+            "Espace sécurisé activé. Vous pouvez poursuivre vos achats."
+        step.value = "done"
+    } catch (err: unknown) {
+        const msg = toMessage(err, "Code incorrect ou expiré.")
+        if (
+            msg.toLowerCase().includes("embedded wallet proxy not initialized")
+        ) {
+            error.value =
+                "Initialisation en cours, veuillez réessayer dans quelques secondes."
+        } else {
+            error.value = msg
+        }
+    } finally {
+        loading.value = false
+    }
 }
 
 async function logout() {
-	if (hasPrivyError.value || !$privy) {
-		error.value = $privyError.value ?? "Privy non initialisé.";
-		return;
-	}
-	if (loading.value) return;
-	loading.value = true;
-	error.value = null;
-	message.value = null;
-	try {
-		await $privy.auth.logout();
-		$privyUser.value = null;
-		step.value = "email";
-		message.value = "Vous avez été déconnecté.";
-	} catch (err: unknown) {
-		error.value = toMessage(err, "Impossible de vous déconnecter.");
-	} finally {
-		loading.value = false;
-	}
+    if (hasPrivyError.value || !$privy) {
+        error.value = $privyError.value ?? "Privy non initialisé."
+        return
+    }
+    if (loading.value) return
+    loading.value = true
+    error.value = null
+    message.value = null
+    try {
+        await $privy.auth.logout()
+        $privyUser.value = null
+        step.value = "email"
+        message.value = "Vous avez été déconnecté."
+    } catch (err: unknown) {
+        error.value = toMessage(err, "Impossible de vous déconnecter.")
+    } finally {
+        loading.value = false
+    }
 }
 
 // Debug helpers to surface env resolution client-side
-const runtimePrivyAppId = computed(() => useRuntimeConfig().public?.privyAppId);
+const runtimePrivyAppId = computed(() => useRuntimeConfig().public?.privyAppId)
 const importMetaPrivyAppId = computed(() => {
-	const env = import.meta.env as Record<string, string | undefined>;
-	return env.NUXT_PUBLIC_PRIVY_APP_ID ?? env.PRIVY_APP_ID;
-});
+    const env = import.meta.env as Record<string, string | undefined>
+    return env.NUXT_PUBLIC_PRIVY_APP_ID ?? env.PRIVY_APP_ID
+})
 const processEnvPrivyAppId = computed(
-	() => process.env.NUXT_PUBLIC_PRIVY_APP_ID ?? process.env.PRIVY_APP_ID,
-);
+    () => process.env.NUXT_PUBLIC_PRIVY_APP_ID ?? process.env.PRIVY_APP_ID,
+)
 </script>
 
 <template>
@@ -157,21 +179,21 @@ const processEnvPrivyAppId = computed(
     <p v-if="$privyError" class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ $privyError }}</p>
 
     <div v-else class="space-y-4">
-      <div v-if="step === 'email'" class="space-y-3">
+      <div v-if="step === 'email'" class="space-y-5">
         <p class="text-sm text-black/70">Authentifiez-vous via email. Privy gère l'envoi du code et crée votre portefeuille intégré automatiquement.</p>
-        <label class="space-y-2 text-sm font-medium text-black/80 mb-2">
-          Email
+        <div class="space-y-2">
+          <label class="block text-sm font-medium text-black/80">Email</label>
           <input
             v-model="email"
             type="email"
             required
             placeholder="vous@example.com"
-            class="w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-black"
+            class="w-full rounded-full border border-black/10 bg-white px-4 py-3.5 text-sm outline-none transition focus:border-black"
           />
-        </label>
+        </div>
         <button
           type="button"
-          class="w-full rounded-full bg-black px-5 py-3 text-white transition hover:bg-neutral-900 disabled:cursor-not-allowed disabled:opacity-60"
+          class="w-full rounded-full bg-black px-5 py-3.5 text-sm text-white transition hover:bg-neutral-900 disabled:cursor-not-allowed disabled:opacity-60"
           :disabled="loading"
           @click="sendEmailCode"
         >
@@ -179,10 +201,10 @@ const processEnvPrivyAppId = computed(
         </button>
       </div>
 
-      <div v-else-if="step === 'otp'" class="space-y-3">
+      <div v-else-if="step === 'otp'" class="space-y-5">
         <p class="text-sm text-black/70">Saisissez le code reçu. La création du coffre intégré se fait à l'étape suivante.</p>
-        <label class="space-y-2 text-sm font-medium text-black/80 mb-2">
-          Code reçu par email
+        <div class="space-y-2">
+          <label class="block text-sm font-medium text-black/80">Code reçu par email</label>
           <input
             v-model="otp"
             type="text"
@@ -190,9 +212,9 @@ const processEnvPrivyAppId = computed(
             inputmode="numeric"
             pattern="[0-9]{6}"
             placeholder="123456"
-            class="w-full rounded-full border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-black"
+            class="w-full rounded-full border border-black/10 bg-white px-4 py-3.5 text-sm outline-none transition focus:border-black"
           />
-        </label>
+        </div>
         <div class="flex gap-3">
           <button
             type="button"

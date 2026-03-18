@@ -1,147 +1,153 @@
-import { randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto"
 
 function isWalletAddress(value: string | null | undefined): value is string {
-  return typeof value === "string" && /^0x[a-fA-F0-9]{40}$/.test(value);
+    return typeof value === "string" && /^0x[a-fA-F0-9]{40}$/.test(value)
 }
 
-type OrderStatus = "PENDING" | "PAYMENT_CREATED" | "PAID" | "FAILED";
+type OrderStatus = "PENDING" | "PAYMENT_CREATED" | "PAID" | "FAILED"
 
 type User = {
-  id: string;
-  email: string;
-  walletAddress: string;
-  privyUserId?: string | null;
-};
+    id: string
+    email: string
+    walletAddress: string
+    privyUserId?: string | null
+}
 
 type Bag = {
-  id: string;
-  uid: string;
-  name: string;
-  description?: string | null;
-  priceCents: number;
-  currency: string;
-};
+    id: string
+    uid: string
+    name: string
+    description?: string | null
+    priceCents: number
+    currency: string
+}
 
 type Order = {
-  id: string;
-  userId: string;
-  bagId: string;
-  status: OrderStatus;
-  stripeSessionId?: string | null;
-  stripePaymentIntent?: string | null;
-  onChainTokenId?: string | null;
-  pinataCid?: string | null;
-  tokenUri?: string | null;
-  txHash?: string | null;
-  processingError?: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
+    id: string
+    userId: string
+    bagId: string
+    status: OrderStatus
+    stripeSessionId?: string | null
+    stripePaymentIntent?: string | null
+    onChainTokenId?: string | null
+    pinataCid?: string | null
+    tokenUri?: string | null
+    txHash?: string | null
+    processingError?: string | null
+    createdAt: Date
+    updatedAt: Date
+}
 
-const users: User[] = [];
+const users: User[] = []
 
 const bags: Bag[] = [
-  {
-    currency: "EUR",
-    description: "Prototype certifié.",
-    id: "bag-demo",
-    name: "Sac Demo Vérifié",
-    priceCents: 125_000,
-    uid: "bag-demo-uid",
-  },
-];
+    {
+        currency: "EUR",
+        description: "Prototype certifié.",
+        id: "bag-demo",
+        name: "Sac Demo Vérifié",
+        priceCents: 125_000,
+        uid: "bag-demo-uid",
+    },
+]
 
-const orders: Order[] = [];
+const orders: Order[] = []
 
 export function findUser(userId: string) {
-  return users.find((u) => u.id === userId || u.privyUserId === userId) || null;
+    return (
+        users.find((u) => u.id === userId || u.privyUserId === userId) || null
+    )
 }
 
 export function upsertUserByPrivyId(
-  privyUserId: string,
-  walletAddress?: string,
+    privyUserId: string,
+    walletAddress?: string,
 ): User {
-  const normalizedWallet = walletAddress?.trim();
-  const validWallet = isWalletAddress(normalizedWallet)
-    ? normalizedWallet
-    : null;
+    const normalizedWallet = walletAddress?.trim()
+    const validWallet = isWalletAddress(normalizedWallet)
+        ? normalizedWallet
+        : null
 
-  const existing = findUser(privyUserId);
-  if (existing) {
-    if (validWallet) {
-      existing.walletAddress = validWallet;
+    const existing = findUser(privyUserId)
+    if (existing) {
+        if (validWallet) {
+            existing.walletAddress = validWallet
+        }
+        return existing
     }
-    return existing;
-  }
 
-  const user: User = {
-    email: "",
-    id: randomUUID(),
-    privyUserId,
-    walletAddress: validWallet ?? "",
-  };
-  users.push(user);
-  return user;
+    const user: User = {
+        email: "",
+        id: randomUUID(),
+        privyUserId,
+        walletAddress: validWallet ?? "",
+    }
+    users.push(user)
+    return user
 }
 
 export function findBag(bagId: string) {
-  return bags.find((b) => b.id === bagId) || null;
+    return bags.find((b) => b.id === bagId) || null
 }
 
 export function createOrder(input: {
-  userId: string;
-  bagId: string;
-  stripeSessionId?: string;
+    userId: string
+    bagId: string
+    stripeSessionId?: string
 }): Order {
-  const now = new Date();
-  const order: Order = {
-    bagId: input.bagId,
-    createdAt: now,
-    id: randomUUID(),
-    status: "PAYMENT_CREATED",
-    stripeSessionId: input.stripeSessionId ?? null,
-    updatedAt: now,
-    userId: input.userId,
-  };
-  orders.push(order);
-  return order;
+    const now = new Date()
+    const order: Order = {
+        bagId: input.bagId,
+        createdAt: now,
+        id: randomUUID(),
+        status: "PAYMENT_CREATED",
+        stripeSessionId: input.stripeSessionId ?? null,
+        updatedAt: now,
+        userId: input.userId,
+    }
+    orders.push(order)
+    return order
 }
 
 export function updateOrderBySession(
-  stripeSessionId: string,
-  update: Partial<
-    Pick<
-      Order,
-      | "onChainTokenId"
-      | "pinataCid"
-      | "processingError"
-      | "status"
-      | "stripePaymentIntent"
-      | "tokenUri"
-      | "txHash"
-    >
-  >,
+    stripeSessionId: string,
+    update: Partial<
+        Pick<
+            Order,
+            | "onChainTokenId"
+            | "pinataCid"
+            | "processingError"
+            | "status"
+            | "stripePaymentIntent"
+            | "tokenUri"
+            | "txHash"
+        >
+    >,
 ) {
-  const target = orders.find((o) => o.stripeSessionId === stripeSessionId);
-  if (!target) return false;
-  Object.assign(target, update, { updatedAt: new Date() });
-  return true;
+    const target = orders.find((o) => o.stripeSessionId === stripeSessionId)
+    if (!target) return false
+    Object.assign(target, update, { updatedAt: new Date() })
+    return true
 }
 
 export function getOrderBySession(stripeSessionId: string) {
-  return orders.find((o) => o.stripeSessionId === stripeSessionId) || null;
+    return orders.find((o) => o.stripeSessionId === stripeSessionId) || null
 }
 
 export function listBags() {
-  return bags;
+    return bags
+}
+
+export function findBagByUid(uid: string) {
+    return bags.find((b) => b.uid === uid) || null
 }
 
 export function listOrders() {
-  return orders;
+    return orders
 }
 
 export function listOrdersByPrivyId(privyUserId: string) {
-  const user = findUser(privyUserId);
-  if (!user) return [];
-  return orders.filter((o) => o.userId === user.id);
+    const user = findUser(privyUserId)
+    if (!user) return []
+    return orders.filter((o) => o.userId === user.id)
 }

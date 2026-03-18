@@ -1,5 +1,5 @@
-import Privy, { LocalStorage } from "@privy-io/js-sdk-core"
 import type { User } from "@privy-io/api-types"
+import Privy, { LocalStorage } from "@privy-io/js-sdk-core"
 
 type PublicConfig = {
     privyAppId?: string
@@ -11,6 +11,7 @@ const toMessage = (err: unknown, fallback: string) => {
     return fallback
 }
 
+// biome-ignore lint/complexity/noExcessiveLinesPerFunction: plugin d'initialisation Privy — longueur inhérente à la configuration
 export default defineNuxtPlugin(() => {
     const config = useRuntimeConfig()
 
@@ -52,16 +53,22 @@ export default defineNuxtPlugin(() => {
     // The JS SDK Core doesn't do this automatically (unlike the React SDK).
     const iframe = document.createElement("iframe")
     iframe.src = client.embeddedWallet.getURL()
-    iframe.style.cssText = "display:none;position:absolute;width:0;height:0;border:0;"
+    iframe.style.cssText =
+        "display:none;position:absolute;width:0;height:0;border:0;"
     document.body.appendChild(iframe)
 
     const handleWalletMessage = (event: MessageEvent) => {
         try {
-            const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data
+            const data =
+                typeof event.data === "string"
+                    ? JSON.parse(event.data)
+                    : event.data
             if (data?.event?.startsWith?.("privy:")) {
                 client.embeddedWallet.onMessage(data)
             }
-        } catch { /* non-privy messages are ignored */ }
+        } catch {
+            /* non-privy messages are ignored */
+        }
     }
     window.addEventListener("message", handleWalletMessage)
 
@@ -69,9 +76,20 @@ export default defineNuxtPlugin(() => {
         if (iframe.contentWindow) {
             // biome-ignore lint/suspicious/noExplicitAny: setMessagePoster not in SDK types
             ;(client.embeddedWallet as any).setMessagePoster({
-                postMessage: (msg: unknown, origin: string, transfer?: unknown) =>
-                    iframe.contentWindow!.postMessage(msg, origin, transfer as Transferable[] | undefined),
-                reload: () => { iframe.src = client.embeddedWallet.getURL() },
+                postMessage: (
+                    msg: unknown,
+                    origin: string,
+                    transfer?: unknown,
+                ) =>
+                    // biome-ignore lint/style/noNonNullAssertion: iframe.contentWindow est garanti présent après le chargement de l'iframe
+                    iframe.contentWindow!.postMessage(
+                        msg,
+                        origin,
+                        transfer as Transferable[] | undefined,
+                    ),
+                reload: () => {
+                    iframe.src = client.embeddedWallet.getURL()
+                },
             })
         }
     })
@@ -84,11 +102,19 @@ export default defineNuxtPlugin(() => {
                 const current = await client.user.get()
                 privyUser.value = current?.user ?? null
                 if (privyUser.value) {
-                    // biome-ignore lint/suspicious/noExplicitAny: Privy linked_accounts shape varies by SDK version
-                    const wallet = (privyUser.value as any).linked_accounts?.find(
-                        (a: any) => a.type === "wallet" && a.wallet_client_type === "privy" && a.connector_type === "embedded"
+                    // biome-ignore lint/suspicious/noExplicitAny: Privy User linked_accounts shape varies by SDK version
+                    const u = privyUser.value as any
+                    const wallet = u.linked_accounts?.find(
+                        // biome-ignore lint/suspicious/noExplicitAny: Privy linked_accounts shape varies by SDK version
+                        (a: any) =>
+                            a.type === "wallet" &&
+                            a.wallet_client_type === "privy" &&
+                            a.connector_type === "embedded",
                     )
-                    console.info("[privy] user session restored — wallet:", wallet?.address ?? "none")
+                    console.info(
+                        "[privy] user session restored — wallet:",
+                        wallet?.address ?? "none",
+                    )
                 }
             } catch (err: unknown) {
                 console.warn("[privy-plugin] unable to fetch user", err)

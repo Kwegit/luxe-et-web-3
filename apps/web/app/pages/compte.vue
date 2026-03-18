@@ -1,80 +1,87 @@
 <script setup lang="ts">
-import type { User } from "@privy-io/api-types";
-import { computed, ref, watch, watchEffect } from "vue";
+import type { User } from "@privy-io/api-types"
+import { computed, ref, watch, watchEffect } from "vue"
 
-const nuxtApp = useNuxtApp();
-const router = useRouter();
-const $privy = nuxtApp.$privy;
-const $privyUser = nuxtApp.$privyUser ?? ref<User | null>(null);
-const $privyReady = nuxtApp.$privyReady ?? ref(false);
+const nuxtApp = useNuxtApp()
+const router = useRouter()
+const $privy = nuxtApp.$privy
+const $privyUser = nuxtApp.$privyUser ?? ref<User | null>(null)
+const $privyReady = nuxtApp.$privyReady ?? ref(false)
 
-// biome-ignore lint/suspicious/noExplicitAny: Privy User email shape varies by SDK version
 const userEmail = computed(() => {
-  const u = $privyUser.value as any;
-  return u?.email?.address ?? u?.emails?.[0]?.address ?? null;
-});
+    // biome-ignore lint/suspicious/noExplicitAny: Privy User email shape varies by SDK version
+    const u = $privyUser.value as any
+    return u?.email?.address ?? u?.emails?.[0]?.address ?? null
+})
 
-const logoutLoading = ref(false);
+const logoutLoading = ref(false)
 async function logout() {
-  if (!$privy || logoutLoading.value) return;
-  logoutLoading.value = true;
-  try {
-    await $privy.auth.logout();
-    $privyUser.value = null;
-    router.push("/auth");
-  } finally {
-    logoutLoading.value = false;
-  }
+    if (!$privy || logoutLoading.value) return
+    logoutLoading.value = true
+    try {
+        await $privy.auth.logout()
+        $privyUser.value = null
+        router.push("/auth")
+    } finally {
+        logoutLoading.value = false
+    }
 }
 
 watchEffect(() => {
-  if ($privyReady.value && !$privyUser.value) {
-    router.push("/auth");
-  }
-});
+    if ($privyReady.value && !$privyUser.value) {
+        router.push("/auth")
+    }
+})
 
-// biome-ignore lint/suspicious/noExplicitAny: Privy linked_accounts shape varies by SDK version
 const walletAddress = computed<string>(() => {
-  const accounts = ($privyUser.value as any)?.linked_accounts ?? [];
-  const embedded = accounts.find(
-    (a: any) =>
-      a.type === "wallet" &&
-      a.wallet_client_type === "privy" &&
-      a.connector_type === "embedded",
-  );
-  return embedded?.address ?? "";
-});
+    // biome-ignore lint/suspicious/noExplicitAny: Privy linked_accounts shape varies by SDK version
+    const accounts = ($privyUser.value as any)?.linked_accounts ?? []
+    const embedded = accounts.find(
+        // biome-ignore lint/suspicious/noExplicitAny: Privy linked_accounts shape varies by SDK version
+        (a: any) =>
+            a.type === "wallet" &&
+            a.wallet_client_type === "privy" &&
+            a.connector_type === "embedded",
+    )
+    return embedded?.address ?? ""
+})
 
 type Certificate = {
-  id: string;
-  bagId: string;
-  bagName: string;
-  priceCents: number;
-  currency: string;
-  certificateRef: string | null;
-  certified: boolean;
-  createdAt: string;
-};
+    id: string
+    bagId: string
+    bagName: string
+    priceCents: number
+    currency: string
+    certificateRef: string | null
+    certified: boolean
+    createdAt: string
+}
 
 const {
-  data: certificates,
-  pending,
-  error,
-  refresh,
+    data: certificates,
+    pending,
+    error,
+    refresh,
 } = await useFetch<Certificate[]>("/api/user/certificates", {
-  query: { walletAddress },
-  immediate: false,
-});
+    immediate: false,
+    query: { walletAddress },
+})
 
 // Privy restores the session asynchronously — trigger the fetch once the wallet address is available
-watch(walletAddress, (addr) => { if (addr) refresh(); }, { immediate: true });
+watch(
+    walletAddress,
+    (addr) => {
+        if (addr) refresh()
+    },
+    { immediate: true },
+)
 
 function formatDate(date: string | Date) {
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(new Date(date));
+    return new Intl.DateTimeFormat("fr-FR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+    }).format(new Date(date))
 }
 </script>
 
@@ -89,14 +96,14 @@ function formatDate(date: string | Date) {
     <!-- connected user bar -->
     <div
       v-if="$privyUser"
-      class="flex items-center justify-between rounded-2xl border border-black/10 bg-white px-5 py-3"
+      class="flex flex-col gap-3 rounded-2xl border border-black/10 bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
     >
-      <div class="text-sm text-black/70">
+      <div class="truncate text-sm text-black/70">
         <span v-if="userEmail">{{ userEmail }}</span>
         <span v-else class="text-black/40">Compte connecté</span>
       </div>
       <button
-        class="rounded-full border border-black px-4 py-2 text-sm transition hover:bg-black hover:text-white disabled:opacity-50"
+        class="shrink-0 rounded-full border border-black px-4 py-2.5 text-sm transition hover:bg-black hover:text-white disabled:opacity-50 sm:py-2"
         :disabled="logoutLoading"
         @click="logout"
       >
@@ -153,19 +160,18 @@ function formatDate(date: string | Date) {
         <article
           v-for="cert in certificates"
           :key="cert.id"
-          class="flex items-start justify-between gap-4 rounded-2xl bg-white p-6 shadow-sm"
+          class="rounded-2xl bg-white p-5 shadow-sm space-y-4 sm:p-6"
         >
-          <div class="space-y-1">
-            <p class="font-semibold">{{ cert.bagName }}</p>
-            <p class="text-sm text-black/60">Acquis le {{ formatDate(cert.createdAt) }}</p>
-            <p v-if="cert.certificateRef" class="font-mono text-xs text-black/40">
-              Réf. {{ cert.certificateRef }}
-            </p>
-          </div>
-
-          <div class="flex shrink-0 items-center gap-4">
+          <div class="flex items-start justify-between gap-3">
+            <div class="space-y-1">
+              <p class="font-semibold">{{ cert.bagName }}</p>
+              <p class="text-sm text-black/60">Acquis le {{ formatDate(cert.createdAt) }}</p>
+              <p v-if="cert.certificateRef" class="font-mono text-xs text-black/40">
+                Réf. {{ cert.certificateRef }}
+              </p>
+            </div>
             <span
-              class="rounded-full px-3 py-1 text-xs font-medium"
+              class="shrink-0 rounded-full px-3 py-1 text-xs font-medium"
               :class="
                 cert.certified
                   ? 'bg-emerald-50 text-emerald-700'
@@ -174,13 +180,13 @@ function formatDate(date: string | Date) {
             >
               {{ cert.certified ? "Certifié" : "En cours…" }}
             </span>
-            <NuxtLink
-              :to="`/bags/${cert.bagId}`"
-              class="text-sm underline underline-offset-4"
-            >
-              Voir la pièce
-            </NuxtLink>
           </div>
+          <NuxtLink
+            :to="`/bags/${cert.bagId}`"
+            class="inline-block text-sm underline underline-offset-4 text-black/60 hover:text-black"
+          >
+            Voir la pièce →
+          </NuxtLink>
         </article>
       </div>
     </div>

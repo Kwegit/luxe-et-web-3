@@ -1,240 +1,244 @@
 <script setup lang="ts">
-import type { User } from "@privy-io/api-types";
-import { computed, onUnmounted, ref, watchEffect } from "vue";
-import { useRoute } from "vue-router";
+import type { User } from "@privy-io/api-types"
+import { computed, onUnmounted, ref, watchEffect } from "vue"
+import { useRoute } from "vue-router"
 
 // POC: media assets for bag-1
-import photo1 from "~/assets/bag-1/photo-1.png";
-import photo2 from "~/assets/bag-1/photo-2.png";
-import photo3 from "~/assets/bag-1/photo-3.png";
-import photo4 from "~/assets/bag-1/photo-4.png";
-import photo5 from "~/assets/bag-1/photo-5.png";
-import photo6 from "~/assets/bag-1/photo-6.png";
-import videoSrc from "~/assets/bag-1/video.mp4";
+import photo1 from "~/assets/bag-1/photo-1.png"
+import photo2 from "~/assets/bag-1/photo-2.png"
+import photo3 from "~/assets/bag-1/photo-3.png"
+import photo4 from "~/assets/bag-1/photo-4.png"
+import photo5 from "~/assets/bag-1/photo-5.png"
+import photo6 from "~/assets/bag-1/photo-6.png"
+import videoSrc from "~/assets/bag-1/video.mp4"
 
 type MediaItem =
-  | { type: "video"; src: string }
-  | { type: "photo"; alt: string; src: string };
+    | { type: "video"; src: string }
+    | { type: "photo"; alt: string; src: string }
 
 // Map media items by bag id; currently only one bag is defined.
 const mediaByBagId: Record<string, MediaItem[]> = {
-  "bag-demo": [
-    { type: "video", src: videoSrc },
-    { type: "photo", alt: "Photo 1", src: photo1 },
-    { type: "photo", alt: "Photo 2", src: photo2 },
-    { type: "photo", alt: "Photo 3", src: photo3 },
-    { type: "photo", alt: "Photo 4", src: photo4 },
-    { type: "photo", alt: "Photo 5", src: photo5 },
-    { type: "photo", alt: "Photo 6", src: photo6 },
-  ],
-};
+    "bag-demo": [
+        { src: videoSrc, type: "video" },
+        { alt: "Photo 1", src: photo1, type: "photo" },
+        { alt: "Photo 2", src: photo2, type: "photo" },
+        { alt: "Photo 3", src: photo3, type: "photo" },
+        { alt: "Photo 4", src: photo4, type: "photo" },
+        { alt: "Photo 5", src: photo5, type: "photo" },
+        { alt: "Photo 6", src: photo6, type: "photo" },
+    ],
+}
 
-const route = useRoute();
-const bagId = computed(() => String(route.params.id ?? "bag-demo"));
+const route = useRoute()
+const bagId = computed(() => String(route.params.id ?? "bag-demo"))
 
 const mediaItems = computed<MediaItem[]>(() => {
-  return mediaByBagId[bagId.value] ?? mediaByBagId["bag-demo"] ?? [];
-});
+    return mediaByBagId[bagId.value] ?? mediaByBagId["bag-demo"] ?? []
+})
 
-const activeIndex = ref(0);
-const activeItem = computed(() => mediaItems.value[activeIndex.value]);
-const isVideo = computed(() => activeItem.value?.type === "video");
+const activeIndex = ref(0)
+const activeItem = computed(() => mediaItems.value[activeIndex.value])
+const isVideo = computed(() => activeItem.value?.type === "video")
 
 // Declared before watchEffect to avoid temporal dead zone
-const userInteracted = ref(false);
-let slideshowTimer: ReturnType<typeof setTimeout> | null = null;
+const userInteracted = ref(false)
+let slideshowTimer: ReturnType<typeof setTimeout> | null = null
 
 // Reset slideshow state when the bag changes
 watchEffect(() => {
-  // Access bagId to track dependency
-  void bagId.value;
-  activeIndex.value = 0;
-  userInteracted.value = false;
-  clearAutoAdvance();
-});
+    // Access bagId to track dependency
+    void bagId.value
+    activeIndex.value = 0
+    userInteracted.value = false
+    clearAutoAdvance()
+})
 
 function selectMedia(i: number) {
-  userInteracted.value = true;
-  activeIndex.value = i;
-  clearAutoAdvance();
+    userInteracted.value = true
+    activeIndex.value = i
+    clearAutoAdvance()
 }
 
 function onVideoEnded() {
-  if (userInteracted.value) return;
-  startAutoAdvance(1);
+    if (userInteracted.value) return
+    startAutoAdvance(1)
 }
 
 function startAutoAdvance(fromIndex: number) {
-  clearAutoAdvance();
-  activeIndex.value = fromIndex;
-  slideshowTimer = setTimeout(function advance() {
-    if (userInteracted.value) return;
-    const nextPhoto = activeIndex.value + 1;
-    if (nextPhoto < mediaItems.value.length) {
-      activeIndex.value = nextPhoto;
-      slideshowTimer = setTimeout(advance, 3000);
-    }
-  }, 3000);
+    clearAutoAdvance()
+    activeIndex.value = fromIndex
+    slideshowTimer = setTimeout(function advance() {
+        if (userInteracted.value) return
+        const nextPhoto = activeIndex.value + 1
+        if (nextPhoto < mediaItems.value.length) {
+            activeIndex.value = nextPhoto
+            slideshowTimer = setTimeout(advance, 3000)
+        }
+    }, 3000)
 }
 
 function clearAutoAdvance() {
-  if (slideshowTimer) {
-    clearTimeout(slideshowTimer);
-    slideshowTimer = null;
-  }
+    if (slideshowTimer) {
+        clearTimeout(slideshowTimer)
+        slideshowTimer = null
+    }
 }
 
-onUnmounted(clearAutoAdvance);
+onUnmounted(clearAutoAdvance)
 
 type PrivyUserWithIds = Partial<Pick<User, "id">> & {
-  userId?: string;
-  // biome-ignore lint/style/useNamingConvention: external shape from Privy SDK
-  user_id?: string;
-  wallet?: { address?: string };
-  wallets?: { address?: string }[];
-  account?: { address?: string };
-  accounts?: { address?: string }[];
-  walletAddress?: string;
-  linked_accounts?: { type?: string; address?: string }[];
-  linkedAccounts?: { type?: string; address?: string }[];
-};
+    userId?: string
+    // biome-ignore lint/style/useNamingConvention: external shape from Privy SDK
+    user_id?: string
+    wallet?: { address?: string }
+    wallets?: { address?: string }[]
+    account?: { address?: string }
+    accounts?: { address?: string }[]
+    walletAddress?: string
+    // biome-ignore lint/style/useNamingConvention: external shape from Privy SDK
+    linked_accounts?: { type?: string; address?: string }[]
+    linkedAccounts?: { type?: string; address?: string }[]
+}
 
 function isEvmAddress(value: string | null | undefined): value is string {
-  return typeof value === "string" && /^0x[a-fA-F0-9]{40}$/.test(value);
+    return typeof value === "string" && /^0x[a-fA-F0-9]{40}$/.test(value)
 }
 
 function resolveBuyerWallet(user: PrivyUserWithIds | null): string {
-  if (!user) return "";
+    if (!user) return ""
 
-  const directCandidates = [
-    user.wallet?.address,
-    user.walletAddress,
-    user.account?.address,
-    user.wallets?.[0]?.address,
-    user.accounts?.[0]?.address,
-  ];
-  for (const candidate of directCandidates) {
-    if (isEvmAddress(candidate)) return candidate;
-  }
+    const directCandidates = [
+        user.wallet?.address,
+        user.walletAddress,
+        user.account?.address,
+        user.wallets?.[0]?.address,
+        user.accounts?.[0]?.address,
+    ]
+    for (const candidate of directCandidates) {
+        if (isEvmAddress(candidate)) return candidate
+    }
 
-  const wallets = user?.linked_accounts ?? user?.linkedAccounts ?? [];
-  const preferred = wallets.find(
-    (wallet) => wallet?.type === "embedded_wallet",
-  );
-  if (isEvmAddress(preferred?.address)) return preferred.address;
+    const wallets = user?.linked_accounts ?? user?.linkedAccounts ?? []
+    const preferred = wallets.find(
+        (wallet) => wallet?.type === "embedded_wallet",
+    )
+    if (isEvmAddress(preferred?.address)) return preferred.address
 
-  const firstValid = wallets.find((wallet) => isEvmAddress(wallet?.address));
-  return firstValid?.address ?? "";
+    const firstValid = wallets.find((wallet) => isEvmAddress(wallet?.address))
+    return firstValid?.address ?? ""
 }
 
 function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-const nuxtApp = useNuxtApp();
-const router = useRouter();
-const $privyUser = nuxtApp.$privyUser ?? ref<User | null>(null);
-const $privyReady = nuxtApp.$privyReady ?? ref(false);
-const $privyError = nuxtApp.$privyError ?? ref<string | null>(null);
-const isAuthenticated = computed(() => !!$privyUser.value);
+const nuxtApp = useNuxtApp()
+const router = useRouter()
+const $privyUser = nuxtApp.$privyUser ?? ref<User | null>(null)
+const $privyReady = nuxtApp.$privyReady ?? ref(false)
+const $privyError = nuxtApp.$privyError ?? ref<string | null>(null)
+const isAuthenticated = computed(() => !!$privyUser.value)
 
 const checkoutUserId = computed(() => {
-  const user = $privyUser.value as PrivyUserWithIds | null;
-  return user?.id ?? user?.userId ?? user?.user_id ?? "user";
-});
+    const user = $privyUser.value as PrivyUserWithIds | null
+    return user?.id ?? user?.userId ?? user?.user_id ?? "user"
+})
 
 const checkoutBuyerWallet = computed(() => {
-  const user = $privyUser.value as PrivyUserWithIds | null;
-  return resolveBuyerWallet(user);
-});
+    const user = $privyUser.value as PrivyUserWithIds | null
+    return resolveBuyerWallet(user)
+})
 
 async function waitForPrivyWallet(maxAttempts = 20, delayMs = 750) {
-  const privy = nuxtApp.$privy;
+    const privy = nuxtApp.$privy
 
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    const currentUser = $privyUser.value as PrivyUserWithIds | null;
-    const resolved = resolveBuyerWallet(currentUser);
-    if (isEvmAddress(resolved)) return resolved;
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        const currentUser = $privyUser.value as PrivyUserWithIds | null
+        const resolved = resolveBuyerWallet(currentUser)
+        if (isEvmAddress(resolved)) return resolved
 
-    if (privy?.user?.get) {
-      try {
-        const refreshed = await privy.user.get();
-        $privyUser.value = refreshed?.user ?? null;
-        const refreshedWallet = resolveBuyerWallet(
-          ($privyUser.value as PrivyUserWithIds | null) ?? null,
-        );
-        if (isEvmAddress(refreshedWallet)) return refreshedWallet;
-      } catch (error) {
-        console.warn("[checkout-ui] unable to refresh Privy user", error);
-      }
+        if (privy?.user?.get) {
+            try {
+                const refreshed = await privy.user.get()
+                $privyUser.value = refreshed?.user ?? null
+                const refreshedWallet = resolveBuyerWallet(
+                    ($privyUser.value as PrivyUserWithIds | null) ?? null,
+                )
+                if (isEvmAddress(refreshedWallet)) return refreshedWallet
+            } catch (error) {
+                console.warn(
+                    "[checkout-ui] unable to refresh Privy user",
+                    error,
+                )
+            }
+        }
+
+        if (attempt < maxAttempts - 1) {
+            await sleep(delayMs)
+        }
     }
 
-    if (attempt < maxAttempts - 1) {
-      await sleep(delayMs);
-    }
-  }
-
-  return "";
+    return ""
 }
 
 const {
-  data: bag,
-  pending,
-  error,
-  refresh,
-} = await useFetch(`/api/bags/${bagId.value}`);
+    data: bag,
+    pending,
+    error,
+    refresh,
+} = await useFetch(`/api/bags/${bagId.value}`)
 
-const checkoutLoading = ref(false);
-const feedback = ref<string | null>(null);
+const checkoutLoading = ref(false)
+const feedback = ref<string | null>(null)
 
 async function startCheckout() {
-  if ($privyError.value) {
-    feedback.value = "Connexion indisponible. Merci de réessayer.";
-    return;
-  }
-  if (!$privyReady.value) {
-    feedback.value = "Initialisation de votre compte en cours.";
-    return;
-  }
-  if (!isAuthenticated.value) {
-    feedback.value = "Connectez-vous pour finaliser l'achat.";
-    await router.push("/auth");
-    return;
-  }
-  feedback.value = "Initialisation du wallet Privy...";
-  const buyerWallet = await waitForPrivyWallet();
-  if (!isEvmAddress(buyerWallet)) {
-    feedback.value =
-      "Votre wallet Privy n'est pas prêt. Déconnectez-vous/reconnectez-vous puis réessayez.";
-    return;
-  }
-  if (!bag.value) return;
-  checkoutLoading.value = true;
-  feedback.value = null;
-  try {
-    const { location } = globalThis;
-    if (!location) throw new Error("Location unavailable");
-    const origin = location.origin;
-    const res = await $fetch("/api/checkout", {
-      body: {
-        bagId: bag.value.id,
-        buyerWallet,
-        cancelUrl: `${origin}/bags/${bagId.value}?status=cancel`,
-        successUrl: `${origin}/bags/${bagId.value}?status=success`,
-        userId: checkoutUserId.value,
-      },
-      method: "POST",
-    });
-    if (res?.url) {
-      location.href = res.url as string;
-    } else {
-      feedback.value = "Impossible de créer le paiement pour le moment.";
+    if ($privyError.value) {
+        feedback.value = "Connexion indisponible. Merci de réessayer."
+        return
     }
-  } catch (e) {
-    feedback.value = "Paiement indisponible. Merci de réessayer.";
-  } finally {
-    checkoutLoading.value = false;
-  }
+    if (!$privyReady.value) {
+        feedback.value = "Initialisation de votre compte en cours."
+        return
+    }
+    if (!isAuthenticated.value) {
+        feedback.value = "Connectez-vous pour finaliser l'achat."
+        await router.push("/auth")
+        return
+    }
+    feedback.value = "Initialisation du wallet Privy..."
+    const buyerWallet = await waitForPrivyWallet()
+    if (!isEvmAddress(buyerWallet)) {
+        feedback.value =
+            "Votre wallet Privy n'est pas prêt. Déconnectez-vous/reconnectez-vous puis réessayez."
+        return
+    }
+    if (!bag.value) return
+    checkoutLoading.value = true
+    feedback.value = null
+    try {
+        const { location } = globalThis
+        if (!location) throw new Error("Location unavailable")
+        const origin = location.origin
+        const res = await $fetch("/api/checkout", {
+            body: {
+                bagId: bag.value.id,
+                buyerWallet,
+                cancelUrl: `${origin}/bags/${bagId.value}?status=cancel`,
+                successUrl: `${origin}/bags/${bagId.value}?status=success`,
+                userId: checkoutUserId.value,
+            },
+            method: "POST",
+        })
+        if (res?.url) {
+            location.href = res.url as string
+        } else {
+            feedback.value = "Impossible de créer le paiement pour le moment."
+        }
+    } catch (e) {
+        feedback.value = "Paiement indisponible. Merci de réessayer."
+    } finally {
+        checkoutLoading.value = false
+    }
 }
 
 watchEffect(() => {
@@ -345,19 +349,13 @@ watchEffect(() => {
 
         <p class="text-base text-black/70">{{ bag.description || 'Pièce artisanale de la maison William.' }}</p>
 
-          <div
-            class="flex items-center justify-between rounded-2xl bg-white p-4 shadow-sm"
-          >
+          <div class="rounded-2xl bg-white p-4 shadow-sm space-y-4">
             <div>
-              <p class="text-xs uppercase tracking-[0.2em] text-black/60">
-                Prix
-              </p>
-              <p class="text-2xl font-semibold">
-                €{{ (bag.priceCents / 100).toFixed(0) }}
-              </p>
+              <p class="text-xs uppercase tracking-[0.2em] text-black/60">Prix</p>
+              <p class="text-2xl font-semibold">€{{ (bag.priceCents / 100).toFixed(0) }}</p>
             </div>
             <button
-              class="rounded-full bg-black px-5 py-3 text-white transition hover:bg-neutral-900 disabled:cursor-not-allowed disabled:opacity-60"
+              class="w-full rounded-full bg-black py-3.5 text-sm font-medium text-white transition hover:bg-neutral-900 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-6"
               :disabled="checkoutLoading"
               @click="startCheckout"
             >
