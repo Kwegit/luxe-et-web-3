@@ -43,11 +43,21 @@ const users: User[] = []
 const bags: Bag[] = [
     {
         currency: "EUR",
-        description: "Prototype certifié.",
+        description:
+            "Cabas en cuir grainé noir, coutures sellier contrastantes ivoire, anses tressées à la main. Doublure en daim bordeaux, poche zippée intérieure. Pièce numérotée, édition limitée à 12 exemplaires.",
         id: "bag-demo",
-        name: "Sac Demo Vérifié",
+        name: "Le Noir Sellier",
         priceCents: 125_000,
         uid: "bag-demo-uid",
+    },
+    {
+        currency: "EUR",
+        description:
+            "Sac porté épaule en veau plongé cognac, fermeture par boucle laiton massif brossé. Fond structuré, bandoulière réglable en cuir naturel. Collection Automne — édition numérotée 01/20.",
+        id: "bag-cognac",
+        name: "Le Cognac Boucle",
+        priceCents: 98_000,
+        uid: "bag-cognac-uid",
     },
 ]
 

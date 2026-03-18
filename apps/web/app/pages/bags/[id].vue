@@ -16,8 +16,16 @@ type MediaItem =
     | { type: "video"; src: string }
     | { type: "photo"; alt: string; src: string }
 
-// Map media items by bag id; currently only one bag is defined.
 const mediaByBagId: Record<string, MediaItem[]> = {
+    "bag-cognac": [
+        { src: videoSrc, type: "video" },
+        { alt: "Photo 1", src: photo1, type: "photo" },
+        { alt: "Photo 2", src: photo2, type: "photo" },
+        { alt: "Photo 3", src: photo3, type: "photo" },
+        { alt: "Photo 4", src: photo4, type: "photo" },
+        { alt: "Photo 5", src: photo5, type: "photo" },
+        { alt: "Photo 6", src: photo6, type: "photo" },
+    ],
     "bag-demo": [
         { src: videoSrc, type: "video" },
         { alt: "Photo 1", src: photo1, type: "photo" },
