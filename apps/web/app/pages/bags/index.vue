@@ -1,6 +1,16 @@
 <script setup lang="ts">
 import { computed, ref } from "vue"
-import bagPhoto from "~/assets/bag-1/photo-1.png"
+import photoNoirSellier from "~/assets/noir-sellier/photo-1.png"
+import photoCognac from "~/assets/bag-1/photo-1.png"
+
+const bagImageMap: Record<string, string> = {
+  "bag-demo": photoNoirSellier,
+  "bag-cognac": photoCognac,
+}
+
+function getBagImage(bagId: string): string {
+  return bagImageMap[bagId] ?? photoNoirSellier
+}
 
 const search = ref("")
 const { data: bags, pending, error } = await useFetch("/api/bags")
@@ -52,7 +62,7 @@ const filtered = computed(() => {
         <NuxtLink :to="`/bags/${bag.id}`" class="block overflow-hidden rounded-2xl bg-white shadow transition hover:-translate-y-1">
           <img
             class="h-72 w-full object-cover"
-            :src="(bag as any).image ?? bagPhoto"
+            :src="getBagImage(bag.id)"
             :alt="bag.name"
           />
         </NuxtLink>

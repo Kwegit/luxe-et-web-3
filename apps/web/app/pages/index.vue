@@ -1,8 +1,18 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import bagPhoto from "~/assets/bag-1/photo-1.png"
+import photoNoirSellier from "~/assets/noir-sellier/photo-1.png"
+import photoCognac from "~/assets/bag-1/photo-1.png"
 
 const { data: bags, pending } = await useFetch("/api/bags")
+
+const bagImageMap: Record<string, string> = {
+  "bag-demo": photoNoirSellier,
+  "bag-cognac": photoCognac,
+}
+
+function getBagImage(bagId: string): string {
+  return bagImageMap[bagId] ?? photoNoirSellier
+}
 
 const featured = computed(() => (bags.value ?? []).slice(0, 3))
 </script>
@@ -38,7 +48,7 @@ const featured = computed(() => (bags.value ?? []).slice(0, 3))
 
       <div class="relative overflow-hidden rounded-3xl bg-white shadow-lg">
         <div class="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-black/80" aria-hidden="true" />
-        <img class="h-full w-full object-cover" :src="bagPhoto" alt="Sac de luxe" />
+        <img class="h-full w-full object-cover" :src="photoNoirSellier" alt="Le Noir Sellier" />
         <div class="absolute inset-0 flex flex-col justify-between p-6 text-white">
           <div>
             <p class="text-xs uppercase tracking-[0.3em] text-white/70">Maison William</p>
@@ -74,7 +84,7 @@ const featured = computed(() => (bags.value ?? []).slice(0, 3))
       <div v-else class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
         <article v-for="bag in featured" :key="bag.id" class="space-y-3">
           <NuxtLink :to="`/bags/${bag.id}`" class="block overflow-hidden rounded-2xl bg-white shadow transition hover:-translate-y-1">
-            <img class="h-72 w-full object-cover" :src="(bag as any).image ?? bagPhoto" :alt="bag.name" />
+            <img class="h-72 w-full object-cover" :src="getBagImage(bag.id)" :alt="bag.name" />
           </NuxtLink>
           <div class="flex items-start justify-between">
             <div>
